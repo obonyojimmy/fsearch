@@ -11,19 +11,27 @@ from fsearch.utils import read_config
 class Server:
 
     configs: Config
+    server_socket: socket.socket
+    is_running: bool = False
 
     def __init__(self, config_path: str):
-        self.config_path = config_path
         self.configs = read_config(config_path)
-        self.server_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket = ssl.wrap_socket(
+            self.server_socket,
+            server_side=True,
+            certfile=self.configs.certfile,
+            keyfile=self.configs.keyfile,
+            ssl_version=ssl.PROTOCOL_TLS
+        )
         self.is_running = False
 
     def connect(self):
-        configs = self.configs
-        self.server_socket.bind((configs.host, configs.port))
+        host, port = self.configs.host, self.configs.port
+        self.server_socket.bind((host, port))
         self.server_socket.listen(5)
         self.is_running = True
-        print(f"Server started on {configs.host}:{configs.port}")
+        print(f"Server started on {host}:{port}")
         self.receive()
 
     def receive(self):
