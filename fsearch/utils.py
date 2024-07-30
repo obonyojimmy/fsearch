@@ -7,6 +7,15 @@ from fsearch.config import Config
 
 def read_config(config_path: str) -> Config:
     """ Reads server configurations from file to a `Config` object
+
+    Args:
+    - filepath (str): The path to the file to read.
+
+    Returns:
+    - Config: The server configuration object.
+
+    Raises:
+    - FileNotFoundError: If the provided filepath does not exists.
     """
     if not os.path.isfile(config_path):
         raise FileNotFoundError(f"The file '{config_path}' does not exist.")
@@ -23,24 +32,24 @@ def read_config(config_path: str) -> Config:
 
     return Config(**defaults, **sections)
 
-def read_file(filepath: str) -> list[str]:
+def read_file(filepath: str) -> str:
     """
     Reads the contents of a file and returns a list of lines.
 
     Args:
-        filename (str): The path to the file to read.
+    - filepath (str): The path to the file to read.
 
     Returns:
-        list[str]: A list containing the lines from the file, or None.
+    - str: A str of the contents from the file, or None.
 
     Raises:
-        FileNotFoundError: If the provided filepath does not exists.
+    - FileNotFoundError: If the provided filepath does not exists.
     """
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"The file '{filepath}' does not exist.")
 
     try:
         with open(filepath, 'r') as file:
-            return file.readlines()
+            return file.read()
     except Exception as e:
         return None

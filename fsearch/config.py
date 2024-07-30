@@ -11,4 +11,5 @@ class Config:
     certfile: str = 'server.crt'
     keyfile: str = 'server.key'
     log_level: str = 'INFO'
+    linuxpath: str = 'samples/200k.txt'
     reread_on_query: bool = False

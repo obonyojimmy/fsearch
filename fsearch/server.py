@@ -6,7 +6,11 @@ import socket
 import ssl
 import threading
 from fsearch.config import Config
-from fsearch.utils import read_config
+from fsearch.utils import read_config, read_file
+from fsearch.algorithms import regex_search
+
+global file_contents
+file_contents = ""
 
 class Server:
     """
@@ -57,6 +61,9 @@ class Server:
             ssl_version=ssl.PROTOCOL_TLS
         )
         self.is_running = False
+        if not self.configs.reread_on_query:
+            global file_contents
+            file_contents = read_file(self.configs.linuxpath)
 
     def connect(self):
         """ Starts the server, binds the socket, and begins listening for connections. """
@@ -79,11 +86,18 @@ class Server:
             client_handler.start()
 
     def _handle_client(self, client_socket: socket.socket):
-        """ Handles communication with a connected client. """
+        """ Handles communication with a connected client. 
+        
+        Args:
+        - client_socket (str): The server socket connection
+        
+        """
         try:
-            data = client_socket.recv(1024).decode('utf-8')
-            print(f"Received: {data}")
-            client_socket.sendall("hello world".encode('utf-8'))
+            request_data = client_socket.recv(1024).decode('utf-8')
+            print(f"Received: {request_data}")
+
+            response = self.search(request_data)
+            client_socket.sendall(response.encode('utf-8'))
         except Exception as e:
             print(f"Error handling client: {e}")
         finally:
@@ -94,3 +108,12 @@ class Server:
         self.is_running = False
         self.server_socket.close()
         print("Server stopped")
+
+    def search(self, query) -> str:
+        """ wraps search algorithms function calls """
+        global file_contents
+        found = regex_search(file_contents, query)
+        if found:
+            return "STRING EXISTS"
+        else:
+            return "STRING NOT FOUND"
