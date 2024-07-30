@@ -3,20 +3,27 @@
 
 from __future__ import annotations
 import socket
+import ssl
 import threading
+from fsearch.config import Config
+from fsearch.utils import read_config
 
 class Server:
-    def __init__(self, host: str ='0.0.0.0', port: int =8080):
-        self.host = host
-        self.port = port
+
+    configs: Config
+
+    def __init__(self, config_path: str):
+        self.config_path = config_path
+        self.configs = read_config(config_path)
         self.server_socket: socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.is_running = False
 
     def connect(self):
-        self.server_socket.bind((self.host, self.port))
+        configs = self.configs
+        self.server_socket.bind((configs.host, configs.port))
         self.server_socket.listen(5)
         self.is_running = True
-        print(f"Server started on {self.host}:{self.port}")
+        print(f"Server started on {configs.host}:{configs.port}")
         self.receive()
 
     def receive(self):

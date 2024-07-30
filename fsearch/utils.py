@@ -2,12 +2,12 @@
 # fsearch/utils.py
 
 import configparser
-from collections import namedtuple
 import os
+from fsearch.config import Config
 
-Config = namedtuple('Config', 'linuxpath reread_on_query ssl')
-
-def read_config(config_path) -> Config:
+def read_config(config_path: str) -> Config:
+    """ Reads server configurations from file to a `Config` object
+    """
     if not os.path.isfile(config_path):
         raise FileNotFoundError(f"The file '{config_path}' does not exist.")
 
