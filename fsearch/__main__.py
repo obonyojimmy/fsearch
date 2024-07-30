@@ -3,6 +3,7 @@
 
 import argparse
 from fsearch import __app_name__, __version__
+from fsearch.server import Server
 
 def main():
     parser = argparse.ArgumentParser(description="A highly performant and secure command-line server to search text files for strings.")
@@ -17,9 +18,14 @@ def main():
         required=True,
         help="Path to the configuration file"
     )
+
     args = parser.parse_args()
     config_path = args.config
     print(config_path)
+
+    server = Server(config_path)
+    server.connect()
+
 
 if __name__ == "__main__":
     main()

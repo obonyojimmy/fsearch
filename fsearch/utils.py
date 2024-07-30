@@ -22,3 +22,25 @@ def read_config(config_path: str) -> Config:
     sections = {section: dict(config.items(section)) for section in config.sections()}
 
     return Config(**defaults, **sections)
+
+def read_file(filepath: str) -> list[str]:
+    """
+    Reads the contents of a file and returns a list of lines.
+
+    Args:
+        filename (str): The path to the file to read.
+
+    Returns:
+        list[str]: A list containing the lines from the file, or None.
+
+    Raises:
+        FileNotFoundError: If the provided filepath does not exists.
+    """
+    if not os.path.isfile(filepath):
+        raise FileNotFoundError(f"The file '{filepath}' does not exist.")
+
+    try:
+        with open(filepath, 'r') as file:
+            return file.readlines()
+    except Exception as e:
+        return None

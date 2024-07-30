@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
+    """ The base server configuration object """
     host: str = '0.0.0.0'
     port: int = 8080
     certfile: str = 'server.crt'
