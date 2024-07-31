@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 from collections import deque, defaultdict
-from fsearch.utils import hash_words, compute_lps
+from fsearch.utils import compute_lps
 
 def native_search(text: str, pattern: str):
     """
