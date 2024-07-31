@@ -1,199 +1,254 @@
 """This module provides the search algorithms functions for fsearch package."""
 # fsearch/algorithms.py
+from __future__ import annotations
 
 import re
 from collections import deque, defaultdict
 from fsearch.utils import hash_words, compute_lps
 from typing import List
 
-def naive_search(text: str, pattern: str) -> bool:
-	"""
-	Perform a native string search on the provided content.
-	
-	Args:
-	  - text (str): The text in which to search for the pattern.
-	  - pattern (str): The substring to search for in the text.
-	
-	Returns:
-	   bool: True if the pattern is found, False otherwise.
-	"""
-	index = text.find(pattern)
-	return index != -1
+def native_search(text: str, pattern: str):
+    """
+    Searches for an exact match of the pattern in the text using naive search algorithm.
 
+    Args:
+        - text (str): The content of the file.
+        - pattern (str): The search string.
 
-def regex_search(text: str, pattern: str):
-	"""
-	Perform substring search using regex.
-	
-	This function checks whether the pattern exist in the text.
-	It compiles a regex pattern from the substring and searches the text.
+    Returns:
+        bool: True if the pattern is found as a full match in the text, otherwise False.
+    """
+    for line in text.split('\n'):
+        if line == pattern:
+            return True
+    return False
 
-	Args:
-	  - text (str): The text in which to search for the pattern.
-	  - pattern (str): The substring to search for in the text.
-	
-	Returns:
-	   bool: True if the pattern is found, False otherwise.
-	"""
-	# Split text and pattern into words and compile the pattern for whole word match
-	words = ' '.join(text.split())
-	regex_pattern = re.compile(r'\b' + re.escape(pattern) + r'\b')
-	
-	# Search for the pattern in the text
-	return bool(regex_pattern.search(words))
+def regex_search(text: str, pattern: str) -> bool:
+    """
+    Searches for an exact match of the pattern in the text using regular expressions,
+    ensuring that the pattern matches an entire line.
+
+    Parameters:
+    text (str): The content of the file.
+    pattern (str): The search string.
+
+    Returns:
+    bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
+    """
+    # Compile the regex pattern to match the whole line
+    regex = re.compile(f"^{re.escape(pattern)}$", re.MULTILINE)
+    
+    # Search through the text
+    matches = regex.search(text)
+    
+    return matches is not None
 
 def rabin_karp(text: str, pattern: str) -> bool:
-	"""
-	Perform substring search using the Rabin-Karp algorithm.
-	
-	This function checks whether the pattern appears as a whole word in the text.
-	It uses a hashing mechanism to efficiently find the pattern in the text.
+    """
+    Searches for an exact match of the pattern in the text using Rabin-Karp algorithm.
 
-	Args:
-	  - text (str): The text in which to search for the pattern.
-	  - pattern (str): The substring to search for in the text.
+    Parameters:
+        - text (str): The content of the file.
+        - pattern (str): The search string.
 
-	Returns:
-	  bool: True if the pattern is found as a whole word in the text, False otherwise.
-	"""
-	
-	text_words = text.split()
-	pattern_words = pattern.split()
-	
-	if len(text_words) < len(pattern_words):
-		return False
-	
-	pattern_hash = hash_words(pattern_words)
-	
-	for i in range(len(text_words) - len(pattern_words) + 1):
-		window_hash = hash_words(text_words[i:i + len(pattern_words)])
-		if window_hash == pattern_hash and text_words[i:i + len(pattern_words)] == pattern_words:
-			return True
-	
-	return False
+    Returns:
+        bool: True if the pattern is found as a full match in the text, otherwise False.
+    """
+    d = 256  # number of characters in the input alphabet
+    q = 101  # a prime number
+    n = len(text)
+    m = len(pattern)
+    p = 0    # hash value for pattern
+    t = 0    # hash value for text
+    h = 1
 
-def kmp_search(text: str, pattern:str) -> bool:
-	"""
-	Perform substring search using the Knuth-Morris-Pratt (KMP) algorithm.
-	
-	This function checks whether the pattern appears as a whole word in the text.
-	It uses the KMP algorithm to efficiently search for the pattern within the text.
+    for i in range(m-1):
+        h = (h * d) % q
 
-	Parameters:
-	text (str): The text in which to search for the pattern.
-	pattern (str): The pattern to search for in the text.
+    for i in range(m):
+        p = (d * p + ord(pattern[i])) % q
+        t = (d * t + ord(text[i])) % q
 
-	Returns:
-	bool: True if the pattern is found as a whole word in the text, False otherwise.
-	"""
-	text_words = text.split()
-	pattern_words = pattern.split()
-	
-	if len(text_words) < len(pattern_words):
-		return False
+    for i in range(n - m + 1):
+        if p == t:
+            match = True
+            for j in range(m):
+                if text[i + j] != pattern[j]:
+                    match = False
+                    break
+            if match:
+                return True
 
-	lps = compute_lps(pattern_words)
-	i = j = 0
-	while i < len(text_words):
-		if pattern_words[j] == text_words[i]:
-			i += 1
-			j += 1
-		if j == len(pattern_words):
-			return True
-		elif i < len(text_words) and pattern_words[j] != text_words[i]:
-			if j != 0:
-				j = lps[j - 1]
-			else:
-				i += 1
+        if i < n - m:
+            t = (d * (t - ord(text[i]) * h) + ord(text[i + m])) % q
+            if t < 0:
+                t = t + q
 
-	return False
+    return False
 
+def kmp_search(text, pattern) -> bool:
+    """
+    Searches for an exact match of the pattern in the text using KMP (Knuth-Morris-Pratt) algorithm.
+
+    Parameters:
+    text (str): The content of the file.
+    pattern (str): The search string.
+
+    Returns:
+    bool: True if the pattern is found as a full match in the text, otherwise False.
+    """
+    n = len(text)
+    m = len(pattern)
+    lps = compute_lps(pattern)
+    i = 0  # index for text
+    j = 0  # index for pattern
+
+    while i < n:
+        if pattern[j] == text[i]:
+            i += 1
+            j += 1
+
+        if j == m:
+            return True
+            j = lps[j - 1]
+
+        elif i < n and pattern[j] != text[i]:
+            if j != 0:
+                j = lps[j - 1]
+            else:
+                i += 1
+
+    return False
 class AhoCorasick:
-	"""
-	Aho-Corasick algorithm for multiple pattern matching.
-	
-	This class constructs a trie for the given patterns and uses it to search
-	for occurrences of these patterns in a given text, ensuring whole word matching.
+    """
+    Aho-Corasick algorithm for multiple pattern matching.
+    
+    This class constructs a trie for the given patterns and uses it to search
+    for occurrences of these patterns in a given text, ensuring whole word matching.
 
-	Methods:
-	-------
-		__init__(patterns): 
-			Initializes the trie and constructs the failure function.
-	
-		build_trie(patterns): 
-			Builds the trie for the given patterns.
-	
-		build_failure(): 
-			Constructs the failure function for the trie.
-	
-		search(text): 
-			Searches for patterns in the given text and returns True if any pattern matches a whole word.
-	"""
-	def __init__(self, patterns: List[str]):
-		"""
-		Initializes the Aho-Corasick trie and constructs the failure function.
+    Methods:
+    -------
+        __init__(): 
+            Initializes Aho-Corasick algorithm class.
+    
+        __call__(text, pattern): 
+            Initializes Aho-Corasick class and calls search.
+    
+        build_trie(patterns): 
+            Builds the trie for the given patterns.
+    
+        build_failure(): 
+            Constructs the failure function for the trie.
+    
+        search(text): 
+            Searches for patterns in the given text and returns True if any pattern matches a whole word.
+    """
+    def __init__(self):
+        """
+        Initializes the Aho-Corasick algorithm.
 
-		Args:
-			patterns (list of str): List of patterns to search for in the text.
-		"""
-		self.trie = defaultdict(dict)
-		self.fail = defaultdict(int)
-		self.output = defaultdict(list)
-		self.build_trie(patterns)
-		self.build_failure()
+        Args:
+            patterns (list of str): List of patterns to search for in the text.
+        """
+        self.root = {}
+        self.end_of_pattern = {}  # To mark end of patterns
+        self.fail_link = {}       # Failure links for nodes
+        self.output_link = {}     # Output links for nodes
 
-	def build_trie(self, patterns: List[str]):
-		"""
-		Builds the trie for the given patterns.
+    def __call__(cls: AhoCorasick, text: str, pattern: str) -> bool:
+        """
+        Initializes and searches for an exact match of the pattern in the text using Aho-Corasick algorithm.
 
-		Parameters:
-			patterns (list of str): List of patterns to insert into the trie.
-		"""
-		for pattern in patterns:
-			node = 0
-			for symbol in pattern:
-				node = self.trie[node].setdefault(symbol, len(self.trie))
-			self.output[node].append(pattern)
+        Args:
+            - text (str): The content of the file.
+            - pattern (str): The search string.
 
-	def build_failure(self):
-		"""
-		Constructs the failure function for the trie.
-		
-		The failure function is used to determine the next state when a mismatch occurs.
-		"""
-		queue = deque()
-		for node in self.trie[0]:
-			queue.append(self.trie[0][node])
-			self.fail[self.trie[0][node]] = 0
-		while queue:
-			r = queue.popleft()
-			for a in self.trie[r]:
-				s = self.trie[r][a]
-				queue.append(s)
-				state = self.fail[r]
-				while state and a not in self.trie[state]:
-					state = self.fail[state]
-				self.fail[s] = self.trie[state].get(a, 0)
-				self.output[s].extend(self.output[self.fail[s]])
+        Returns:
+            - bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
+        """
+        self: AhoCorasick = cls()
+        self.add_pattern(pattern)
+        self.build_failure()
+        return self.search(text)
+        
+    def add_pattern(self, pattern: List[str]):
+        """
+        Add a pattern to the Aho-Corasick automaton.
 
-	def search(self, text: str):
-		"""
-		Searches for patterns in the given text.
+        Args:
+            - pattern (str): The pattern to add.
+        """
+        node = self.root
+        for char in pattern:
+            if char not in node:
+                node[char] = {}
+            node = node[char]
+        # Use id() to uniquely identify the node where the pattern ends
+        self.end_of_pattern[id(node)] = pattern
 
-		Parameters:
-			text (str): The text in which to search for the patterns.
+    def build_failure(self):
+        """
+        Build failure links for the Aho-Corasick automaton.
+        """
+        queue = deque()
+        # Initialize the queue with the root's children
+        for char, child in self.root.items():
+            self.fail_link[id(child)] = self.root
+            queue.append(child)
 
-		Returns:
-			bool: True if any pattern matches a whole word in the text, False otherwise.
-		"""
-		words = text.split()
-		for word in words:
-			node = 0
-			for symbol in word:
-				while node and symbol not in self.trie[node]:
-					node = self.fail[node]
-				node = self.trie[node].get(symbol, 0)
-				if node in self.output:
-					if word in self.output[node]:
-						return True
-		return False
+        while queue:
+            current_node = queue.popleft()
+            current_node_id = id(current_node)
+
+            for char, child in current_node.items():
+                if char == 'fail':
+                    continue  # Skip the 'fail' key added for queue initialization
+
+                queue.append(child)
+                fail_node = self.fail_link[current_node_id]
+
+                while fail_node is not None and char not in fail_node:
+                    fail_node = self.fail_link.get(id(fail_node))
+                self.fail_link[id(child)] = fail_node[char] if fail_node else self.root
+                
+                if id(self.fail_link[id(child)]) in self.end_of_pattern:
+                    self.output_link[id(child)] = self.fail_link[id(child)]
+                else:
+                    self.output_link[id(child)] = self.output_link.get(id(self.fail_link[id(child)]), None)
+
+    def search(self, text: str) -> bool:
+        """
+        Search for patterns in the text, ensuring the pattern matches an entire line.
+
+        Parameters:
+            - text (str): The text to search through.
+
+        Returns:
+            bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
+        """
+        lines = text.splitlines()
+        for line in lines:
+            node = self.root
+            i = 0
+            while i < len(line):
+                char = line[i]
+                while node is not None and char not in node:
+                    node = self.fail_link.get(id(node))
+                if node is None:
+                    node = self.root
+                    i += 1
+                    continue
+
+                node = node[char]
+                temp_node = node
+                while temp_node is not None:
+                    if id(temp_node) in self.end_of_pattern:
+                        pattern_length = len(self.end_of_pattern[id(temp_node)])
+                        if i - pattern_length + 1 == 0 and len(line) == pattern_length:
+                            return True
+                    temp_node = self.output_link.get(id(temp_node), None)
+                i += 1
+
+        return False
+
+

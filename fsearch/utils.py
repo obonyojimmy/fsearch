@@ -79,16 +79,16 @@ def compute_lps(pattern: str) -> list:
       list: LPS array for the pattern.
     """
     lps = [0] * len(pattern)
-    j = 0
+    length = 0
     i = 1
     while i < len(pattern):
-        if pattern[i] == pattern[j]:
-            j += 1
-            lps[i] = j
+        if pattern[i] == pattern[length]:
+            length += 1
+            lps[i] = length
             i += 1
         else:
-            if j != 0:
-                j = lps[j - 1]
+            if length != 0:
+                length = lps[length - 1]
             else:
                 lps[i] = 0
                 i += 1
