@@ -1,11 +1,11 @@
 """This module provides the server class implementation for fsearch package."""
 # fsearch/server.py
-
+import os
 import socket
 import ssl
 import threading
 from fsearch.config import Config
-from fsearch.utils import read_config, read_file
+from fsearch.utils import read_config, read_file, generate_self_signed_cert
 from fsearch.algorithms import regex_search
 
 global file_contents
@@ -52,6 +52,18 @@ class Server:
         """ Initializes the server with configs and creates a socket  """
         self.configs = read_config(config_path)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if self.configs.ssl:
+            self.load_ssl()
+        self.is_running = False
+        if not self.configs.reread_on_query:
+            global file_contents
+            file_contents = read_file(self.configs.linuxpath)
+
+    def load_ssl(self):
+        """Secures server socket with self-signed SSL certs if certfile or keyfile do not exist."""
+        if not os.path.exists(self.configs.certfile) or not os.path.exists(self.configs.keyfile):
+            self.configs.certfile, self.configs.keyfile = generate_self_signed_cert()
+
         self.server_socket = ssl.wrap_socket(
             self.server_socket,
             server_side=True,
@@ -59,10 +71,6 @@ class Server:
             keyfile=self.configs.keyfile,
             ssl_version=ssl.PROTOCOL_TLS
         )
-        self.is_running = False
-        if not self.configs.reread_on_query:
-            global file_contents
-            file_contents = read_file(self.configs.linuxpath)
 
     def connect(self):
         """ Starts the server, binds the socket, and begins listening for connections. """

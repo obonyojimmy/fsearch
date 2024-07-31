@@ -8,8 +8,9 @@ class Config:
     """ The base server configuration object """
     host: str = '0.0.0.0'
     port: int = 8080
-    certfile: str = 'server.crt'
-    keyfile: str = 'server.key'
+    ssl: bool = True
+    certfile: str = ''
+    keyfile: str = ''
     log_level: str = 'INFO'
     linuxpath: str = 'samples/200k.txt'
     reread_on_query: bool = False

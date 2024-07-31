@@ -3,6 +3,10 @@
 
 import configparser
 import os
+import subprocess
+import tempfile
+from dataclasses import asdict
+from typing import Tuple
 from fsearch.config import Config
 
 def read_config(config_path: str) -> Config:
@@ -20,17 +24,24 @@ def read_config(config_path: str) -> Config:
     if not os.path.isfile(config_path):
         raise FileNotFoundError(f"The file '{config_path}' does not exist.")
 
-    config = configparser.ConfigParser()
+    config_parser = configparser.ConfigParser()
 
     try:
-        config.read(config_path)
+        config_parser.read(config_path)
     except configparser.Error as e:
         raise Exception(f"Error reading the config file: {e}")
 
-    defaults = dict(config.defaults())
-    sections = {section: dict(config.items(section)) for section in config.sections()}
+    defaults = dict(config_parser.defaults())
+    sections = {section: dict(config_parser.items(section)) for section in config_parser.sections()}
 
-    return Config(**defaults, **sections)
+    config = Config(**defaults, **sections)
+
+    # Check if the config option linuxpath, path is relative
+    if not os.path.isabs(config.linuxpath):
+        config.linuxpath = os.path.abspath(config.linuxpath)
+
+    print(f"Using configurations:", asdict(config))
+    return config
 
 def read_file(filepath: str) -> str:
     """
@@ -93,3 +104,27 @@ def compute_lps(pattern: str) -> list:
                 lps[i] = 0
                 i += 1
     return lps
+
+def generate_self_signed_cert() -> Tuple[str, str]:
+    """Generates self-signed certificates using openssl and stores them in a temporary directory."""
+    module_dir = os.path.dirname(os.path.abspath(__file__))
+    cert_dir = os.path.join(module_dir, '.certs')
+
+    if not os.path.exists(cert_dir):
+        os.makedirs(cert_dir)
+
+    certfile = os.path.join(cert_dir, "server.crt")
+    keyfile = os.path.join(cert_dir, "server.key")
+
+    # Return previous generated certs if exists
+    if os.path.exists(certfile) and os.path.exists(keyfile):
+        return certfile, keyfile 
+
+    # Generate the self-signed certificate using openssl
+    subprocess.check_call([
+        "openssl", "req", "-x509", "-nodes", "-days", "365",
+        "-newkey", "rsa:2048", "-keyout", keyfile, "-out", certfile,
+        "-subj", "/C=US/ST=California/L=San Francisco/O=My Company/OU=Org/CN=mydomain.com"
+    ])
+
+    return certfile, keyfile
