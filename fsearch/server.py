@@ -1,7 +1,6 @@
 """This module provides the server class implementation for fsearch package."""
 # fsearch/server.py
 
-from __future__ import annotations
 import socket
 import ssl
 import threading
@@ -95,7 +94,9 @@ class Server:
         try:
             request_data = client_socket.recv(1024).decode('utf-8')
             print(f"Received: {request_data}")
-
+            if self.configs.reread_on_query:
+                global file_contents
+                file_contents = read_file(self.configs.linuxpath)
             response = self.search(request_data)
             client_socket.sendall(response.encode('utf-8'))
         except Exception as e:
