@@ -13,4 +13,4 @@ start:
 	fsearch -c config.ini
 
 test:
-	pytest
+	pytest --fsearch-config /home/jimmy/Projects/Personal/fsearch/config.ini

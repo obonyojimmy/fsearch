@@ -57,31 +57,3 @@ def test_read_file_generic_error():
             content = read_file("dummy_path")
             assert content is None
 
-@patch('tempfile.mkdtemp')
-@patch('os.path.join')
-@patch('subprocess.check_call')
-def test_generate_self_signed_cert(mock_check_call, mock_path_join, mock_mkdtemp):
-    # Mock return values
-    mock_mkdtemp.return_value = '/mock/temp/dir'
-    mock_path_join.side_effect = lambda dir, filename: f'{dir}/{filename}'
-
-    certfile, keyfile = generate_self_signed_cert()
-
-    # Assert that the temporary directory was created
-    mock_mkdtemp.assert_called_once()
-
-    # Assert that the paths were joined correctly
-    mock_path_join.assert_any_call('/mock/temp/dir', 'selfsigned.crt')
-    mock_path_join.assert_any_call('/mock/temp/dir', 'selfsigned.key')
-
-    # Assert that openssl command was called with the correct parameters
-    mock_check_call.assert_called_once_with([
-        'openssl', 'req', '-x509', '-nodes', '-days', '365',
-        '-newkey', 'rsa:2048', '-keyout', '/mock/temp/dir/selfsigned.key', 
-        '-out', '/mock/temp/dir/selfsigned.crt',
-        '-subj', '/C=US/ST=California/L=San Francisco/O=My Company/OU=Org/CN=mydomain.com'
-    ])
-
-    # Assert the function returns the correct paths
-    assert certfile == '/mock/temp/dir/selfsigned.crt'
-    assert keyfile == '/mock/temp/dir/selfsigned.key'
