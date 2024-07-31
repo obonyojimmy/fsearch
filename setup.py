@@ -27,6 +27,9 @@ setup(
     license='MIT license',
     python_requires='>=3.7',
     install_requires=requirements,
+    extras_require={
+        'benchmark': ['matplotlib', 'weasyprint'],
+    },
     entry_points={
         'console_scripts': [
             'fsearch=fsearch.__main__:main',
