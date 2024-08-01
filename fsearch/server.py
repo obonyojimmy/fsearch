@@ -5,7 +5,7 @@ import socket
 import ssl
 import threading
 from fsearch.config import Config
-from fsearch.utils import read_config, read_file, generate_self_signed_cert
+from fsearch.utils import read_config, read_file, generate_certs
 from fsearch.algorithms import regex_search
 
 global file_contents
@@ -61,12 +61,11 @@ class Server:
 
     def load_ssl(self):
         """Secures server socket with self-signed SSL certs if certfile or keyfile do not exist."""
-        if not os.path.exists(self.configs.certfile) or not os.path.exists(self.configs.keyfile):
-            self.configs.certfile, self.configs.keyfile = generate_self_signed_cert()
+        if not os.path.exists(self.configs.certfile) and not os.path.exists(self.configs.keyfile):
+            self.configs.certfile, self.configs.keyfile = generate_certs()
 
-        self.server_socket = ssl.wrap_socket(
-            self.server_socket,
-            server_side=True,
+        self.client_socket = ssl.wrap_socket(
+            self.client_socket,
             certfile=self.configs.certfile,
             keyfile=self.configs.keyfile,
             ssl_version=ssl.PROTOCOL_TLS

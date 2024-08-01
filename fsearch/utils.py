@@ -99,7 +99,7 @@ def compute_lps(pattern: str) -> List[int]:
 
     return lps
 
-def generate_self_signed_cert() -> Tuple[str, str]:
+def generate_certs() -> Tuple[str, str]:
     """Generates self-signed certificates using openssl and stores them in a temporary directory."""
     module_dir = os.path.dirname(os.path.abspath(__file__))
     cert_dir = os.path.join(module_dir, '.certs')

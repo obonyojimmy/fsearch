@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import mock_open, patch
-from fsearch.utils import read_config, read_file, generate_self_signed_cert
+from fsearch.utils import read_config, read_file, generate_certs
 from fsearch.config import Config
 
 # Test data for read_config
