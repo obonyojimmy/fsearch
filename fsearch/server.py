@@ -8,29 +8,29 @@ from fsearch.config import Config
 from fsearch.utils import read_config, read_file, generate_certs
 from fsearch.algorithms import regex_search
 
-global file_contents
-file_contents = ""
-
 class Server:
     """
-    A class used to represent a Server.
+    The Server class. Starts a server from config , reads linux-path config as its database
+    and handles query search connections.
 
-    ...
-
-    Attributes
+    Example
     ----------
-    configs : Config
-        Configuration object for the server
-    server_socket : socket.socket
-        The server's socket
-    is_running : bool
-        Server running state
+    ```
+    server = Server(config_path)
+    server.connect()
+    ```
 
     Methods
     -------
     __init__(config_path: str)
         Initializes the server with configs and creates a socket.
 
+    load_ssl()
+        Secures server socket with TLS.Will generate self-signed SSL certs if configs certfile or keyfile do not exist.
+
+    load_database()
+        Loads the linux-path file as the server database 
+    
     connect()
         Starts the server, binds the socket, and begins listening for connections.
 
@@ -42,25 +42,32 @@ class Server:
 
     stop()
         Stops the server and closes the socket.
+    
+    search(query: str)
+        searches for query in the server database with selected search algorithm.
     """
 
+    config_path: str
     configs: Config
     server_socket: socket.socket
     is_running: bool = False
+    max_payload: int = 1024 # the max request payload size. Defaults to 1024
+    max_conn: int = 5 # the maximum number of concurrent connections.
+    max_rows: int = 250000 #the maximum number of lines to be read from linux-path file
+    database: str = ''  # the contents of linux-path used as the server database
 
     def __init__(self, config_path: str):
         """ Initializes the server with configs and creates a socket  """
+        self.config_path = config_path
         self.configs = read_config(config_path)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.configs.ssl:
             self.load_ssl()
+        self.load_database()
         self.is_running = False
-        if not self.configs.reread_on_query:
-            global file_contents
-            file_contents = read_file(self.configs.linuxpath)
 
     def load_ssl(self):
-        """Secures server socket with self-signed SSL certs if certfile or keyfile do not exist."""
+        """Secures server socket with TLS.Will generate self-signed SSL certs if configs certfile or keyfile do not exist."""
         if not os.path.exists(self.configs.certfile) and not os.path.exists(self.configs.keyfile):
             self.configs.certfile, self.configs.keyfile = generate_certs()
 
@@ -71,12 +78,16 @@ class Server:
             keyfile=self.configs.keyfile,
             ssl_version=ssl.PROTOCOL_TLS
         )
+    
+    def load_database(self):
+        """Loads the linux-path file as the server database """
+        self.database = read_file(self.configs.linuxpath)
 
     def connect(self):
         """ Starts the server, binds the socket, and begins listening for connections. """
         host, port = self.configs.host, self.configs.port
         self.server_socket.bind((host, port))
-        self.server_socket.listen(5)
+        self.server_socket.listen(self.max_conn)
         self.is_running = True
         print(f"Server started on {host}:{port}")
         self.receive()
@@ -86,6 +97,15 @@ class Server:
         while self.is_running:
             client_socket, client_address = self.server_socket.accept()
             print(f"Connection from {client_address}")
+
+            ## read the configs again to check if reread_on_query has changed
+            configs = read_config(self.config_path)
+
+            ## if reread_on_query if true , update the self.config.linux-path and re-load the database
+            if configs.reread_on_query:
+                self.configs.linuxpath = configs.linuxpath
+                self.load_database()   
+
             client_handler = threading.Thread(
                 target=self._handle_client,
                 args=(client_socket,)
@@ -96,15 +116,12 @@ class Server:
         """ Handles communication with a connected client. 
         
         Args:
-        - client_socket (str): The server socket connection
-        
+            - client_socket (socket.socket): The server socket connection
         """
         try:
-            request_data = client_socket.recv(1024).decode('utf-8')
+            ## receive connection payload and strip null characters ie '\x00' and decode to utf-8
+            request_data = client_socket.recv(self.max_payload).rstrip(b'\x00').decode('utf-8')
             print(f"Received: {request_data}")
-            if self.configs.reread_on_query:
-                global file_contents
-                file_contents = read_file(self.configs.linuxpath)
             response = self.search(request_data)
             client_socket.sendall(response.encode('utf-8'))
         except Exception as e:
@@ -118,10 +135,16 @@ class Server:
         self.server_socket.close()
         print("Server stopped")
 
-    def search(self, query) -> str:
-        """ wraps search algorithms function calls """
-        global file_contents
-        found = regex_search(file_contents, query)
+    def search(self, query: str) -> str:
+        """ searches for query in the server database with selected search algorithm
+
+        Args:
+            - query (str): The search query.
+
+        Returns:
+            (str): The response, either; "STRING EXISTS" or "STRING NOT FOUND"
+        """
+        found = regex_search(self.database, query)
         if found:
             return "STRING EXISTS"
         else:

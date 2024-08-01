@@ -22,6 +22,12 @@ cd fsearch
 2. **Install the Package**:
 
 
+## Limitations
+
+- It only reads max of 250,000 lines of the data-file (linux path)
+- The client connections are handled in multithreaded but in same process as the server process , this might overload a single processor , optimization is to handle client connection in multiprocess.
+- max number of concurrent connections is set to 5, suggest improvement to make it be configurable.
+
 ## Usage
 
 TBD
