@@ -99,14 +99,15 @@ def compute_lps(pattern: str) -> List[int]:
 
     return lps
 
-def generate_certs() -> Tuple[str, str]:
-    """Generates self-signed certificates using openssl and stores them in a temporary directory."""
-    module_dir = os.path.dirname(os.path.abspath(__file__))
-    cert_dir = os.path.join(module_dir, '.certs')
+def generate_certs(cert_dir: str = './.certs') -> Tuple[str, str]:
+    """Generates self-signed certificates if missing using openssl or return existing certs in the certs directory.
 
-    if not os.path.exists(cert_dir):
-        os.makedirs(cert_dir)
+    Args:
+        cert_dir (str): Directory path to store the generated certs. Defaults to a ./.certs dir releative to cwd.
 
+    Returns:
+        tuple[str, str]: Absolute paths to generated certfile and keyfile.
+    """
     certfile = os.path.join(cert_dir, "server.crt")
     keyfile = os.path.join(cert_dir, "server.key")
 
@@ -114,7 +115,9 @@ def generate_certs() -> Tuple[str, str]:
     if os.path.exists(certfile) and os.path.exists(keyfile):
         return certfile, keyfile 
 
-    # Generate the self-signed certificate using openssl
+    os.makedirs(cert_dir, exist_ok=True)
+
+    # Generate the self-signed certificate using openssl bash cmd
     subprocess.check_call([
         "openssl", "req", "-x509", "-nodes", "-days", "365",
         "-newkey", "rsa:2048", "-keyout", keyfile, "-out", certfile,
@@ -123,13 +126,13 @@ def generate_certs() -> Tuple[str, str]:
 
     return certfile, keyfile
 
-def generate_samples(file_path: str, size: int) -> List[str]:
+def generate_samples(file_path: str, size: int = 10) -> List[str]:
     """
     Sample random lines from a file.
 
     Args:
         - file_path (str): Path to the file.
-        - size (int): Number of lines to sample.
+        - size (int): Number of lines to sample. Defaults to 10.
 
     Returns:
     list: A list of sampled lines.
