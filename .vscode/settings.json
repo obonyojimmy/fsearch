@@ -1,0 +1,10 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.certs": true,
+        "**/*.egg-info/": true,
+    },
+    "editor.tabSize": 4,
+    "search.useIgnoreFiles": true,
+    "search.useParentIgnoreFiles": true
+}

@@ -190,7 +190,7 @@ def print_benchmarks(results: Dict[str, float]):
     print("-" * 35)
     for algorithm, time_taken in results.items():
         print(row_format.format(algorithm, f"{time_taken:.6f}"))
-    print("-" * 35, "\n\n")
+    print("-" * 35, "\n")
 
 def benchmark_algorithms(file_path: str, report_path: str, sample_size: int = 10):
     """

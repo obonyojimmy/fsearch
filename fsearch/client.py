@@ -52,9 +52,8 @@ class Client:
         if not os.path.exists(self.configs.certfile) and not os.path.exists(self.configs.keyfile):
             self.configs.certfile, self.configs.keyfile = generate_certs()
 
-        self.server_socket = ssl.wrap_socket(
-            self.server_socket,
-            server_side=True,
+        self.client_socket = ssl.wrap_socket(
+            self.client_socket,
             certfile=self.configs.certfile,
             keyfile=self.configs.keyfile,
             ssl_version=ssl.PROTOCOL_TLS
