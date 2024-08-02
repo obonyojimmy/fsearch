@@ -7,7 +7,6 @@ import os
 import random
 import subprocess
 import timeit
-from dataclasses import asdict
 from io import BytesIO
 from typing import Tuple, Dict, List
 from fsearch.config import Config
@@ -43,7 +42,6 @@ def read_config(config_path: str) -> Config:
     if not os.path.isabs(config.linuxpath):
         config.linuxpath = os.path.abspath(config.linuxpath)
 
-    print(f"Using configurations:", asdict(config))
     return config
 
 def read_file(filepath: str, max_lines: int = 250000) -> str:

@@ -32,6 +32,7 @@ setup(
     install_requires=requirements,
     extras_require={
         'benchmark': ['matplotlib', 'weasyprint'],
+        'tests': ['pytest>=6.4.4', 'pytest-cov==4.1.0'],
     },
     entry_points={
         'console_scripts': [

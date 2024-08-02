@@ -3,8 +3,10 @@
 import os
 import socket
 import ssl
+import sys
 import time
 import threading
+from dataclasses import asdict
 from fsearch.config import Config
 from fsearch.utils import read_config, read_file, generate_certs
 from fsearch.algorithms import regex_search
@@ -66,7 +68,6 @@ class Server:
         """ Initializes the server with configs and creates a socket  """
         self.config_path = config_path
         self.configs = read_config(config_path)
-
         
         if port:
             self.configs.port = port ## overide port in config file
@@ -76,6 +77,8 @@ class Server:
         if self.configs.ssl: ## load ssl if only ssl is set to true
             self.load_ssl() 
         
+        print(f"DEBUG: Using configurations:", asdict(self.configs))
+
         self.load_database()
         self.is_running = False
         self.max_conn = max_conn
@@ -100,7 +103,12 @@ class Server:
     def connect(self):
         """ Starts the server, binds the socket, and begins listening for connections. """
         host, port = self.configs.host, self.configs.port
-        self.server_socket.bind((host, port))
+        try:
+            self.server_socket.bind((host, port))
+        except OSError as e:
+            print(f'SERVER ERROR: {e}')
+            sys.exit()
+
         self.server_socket.listen(self.max_conn)
         self.is_running = True
         print(f"Server started on {host}:{port}")
@@ -112,10 +120,10 @@ class Server:
             try:
                 client_socket, client_address = self.server_socket.accept()
                 start_time: float = time.time()
-                print(f"Connection from {client_address}")
-
+                
                 ## read the configs again to check if reread_on_query has changed
                 configs = read_config(self.config_path)
+                print(f"DEBUG: [REREAD_ON_QUERY]", self.configs.reread_on_query)
 
                 ## if reread_on_query if true , update the self.config.linux-path and re-load the database
                 if configs.reread_on_query:
@@ -140,7 +148,7 @@ class Server:
             
             ## receive connection payload and strip null characters ie '\x00' and decode to utf-8
             request_data = client_socket.recv(self.max_payload).rstrip(b'\x00').decode('utf-8')
-            print(f"Received: {request_data}")
+            #print(f"Received: {request_data}")
             response = self.search(request_data)
             client_socket.sendall(response.encode('utf-8'))
             duration: float = time.time() - start_time
