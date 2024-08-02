@@ -36,6 +36,7 @@ setup(
     entry_points={
         'console_scripts': [
             'fsearch=fsearch.__main__:main',
+            'fsearch.service=fsearch.service:main',
         ],
     },
 )

@@ -226,7 +226,7 @@ def benchmark_algorithms(file_path: str, report_path: str, sample_size: int = 10
     
     # internal package imports
     from fsearch.algorithms import native_search, regex_search, rabin_karp_search, kmp_search, aho_corasick_search
-    from fsearch.reports import benchmark_template
+    from fsearch.templates import benchmark_template
 
 
     try:

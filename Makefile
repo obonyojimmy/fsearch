@@ -1,4 +1,4 @@
-.PHONY:  dev install help start test benchmark search
+.PHONY:  dev install help start service stop_service test benchmark search
 
 dev:
 	pip install -e .
@@ -11,6 +11,15 @@ help:
 
 start:
 	fsearch start -c config.ini
+
+service:
+	fsearch.service -c config.ini
+
+stop_service:
+	systemctl --user stop fsearch.service
+
+status:
+	systemctl --user status fsearch.service
 
 test:
 	pytest --fsearch-config /home/jimmy/Projects/Personal/fsearch/config.ini --cov=fsearch -v

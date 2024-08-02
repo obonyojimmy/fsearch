@@ -33,3 +33,17 @@ benchmark_template = """
 </body>
 </html>
 """
+
+service_template ="""[Unit]
+Description=Fsearch Command-Line Search Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart={exec_path} start --config {config_file}
+WorkingDirectory={working_dir}
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+"""
