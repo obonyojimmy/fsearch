@@ -57,15 +57,28 @@ class Server:
     max_rows: int = 250000 #the maximum number of lines to be read from linux-path file
     database: str = ''  # the contents of linux-path used as the server database
 
-    def __init__(self, config_path: str):
+    def __init__(
+        self, 
+        config_path: str, 
+        port: int = None, 
+        max_conn: int = 5
+    ):
         """ Initializes the server with configs and creates a socket  """
         self.config_path = config_path
         self.configs = read_config(config_path)
+
+        
+        if port:
+            self.configs.port = port ## overide port in config file
+        
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        if self.configs.ssl:
-            self.load_ssl()
+
+        if self.configs.ssl: ## load ssl if only ssl is set to true
+            self.load_ssl() 
+        
         self.load_database()
         self.is_running = False
+        self.max_conn = max_conn
 
     def load_ssl(self):
         """Secures server socket with TLS.Will generate self-signed SSL certs if configs certfile or keyfile do not exist."""
