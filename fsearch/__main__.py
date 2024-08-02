@@ -7,7 +7,6 @@ import sys
 from typing import Optional
 from fsearch import __app_name__, __version__
 from fsearch.server import Server
-from fsearch.client import Client
 from fsearch.utils import benchmark_algorithms
 
 class DefaultArgs(argparse.Namespace):
@@ -26,11 +25,6 @@ class BenchmarkArgs(argparse.Namespace):
     report_path: str
     sample: str
     size: int
-
-class ClientArgs(argparse.Namespace):
-    config: Optional[str]
-    search: Optional[str]
-
 
 def main():
     parser = argparse.ArgumentParser(description="A highly performant and secure command-line server to search text files for strings.")
@@ -69,20 +63,6 @@ def main():
     # Subcommand: stop
     subparsers.add_parser('stop', help='Stop the server')
 
-    # Subcommand: client
-    parser_client = subparsers.add_parser('client', help='Client to call the server')
-    parser_client.add_argument(
-        "search",
-        type=str,
-        nargs='?',
-        help="String to search for"
-    )
-    parser_client.add_argument(
-        "-c", "--config",
-        type=str,
-        required=True,
-        help="Path to the configuration file"
-    )
 
     # Default (no subcommand)
     parser.add_argument(
@@ -118,21 +98,6 @@ def main():
         stop_args: StopArgs = args
         print("Stopping the server")
         # todo: logic to stop the server
-    elif args.subcommand == 'client':
-        client_args: ClientArgs = args
-        config_path = client_args.config
-        search = client_args.search
-        if not os.path.isabs(config_path):
-            config_path = os.path.abspath(config_path)
-        print(f"Using configuration file: {config_path}")
-        if not search:
-            print("Error: No [search] string provided.\n\nusage: fsearch [-c CONFIG] [search]\n")
-            sys.exit()
-        client = Client(config_path)
-        client.connect()
-        response = client.send_message(search)
-        print(f"Response from server: {response}")
-        client.disconnect()
     else:
         parser.print_help()
 

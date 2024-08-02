@@ -1,7 +1,6 @@
 {
     "files.exclude": {
         "**/__pycache__": true,
-        "**/.certs": true,
         "**/*.egg-info/": true,
     },
     "editor.tabSize": 4,

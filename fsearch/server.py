@@ -96,23 +96,26 @@ class Server:
     def receive(self):
         """ Handles incoming connections and starts a new thread for each client. """
         while self.is_running:
-            client_socket, client_address = self.server_socket.accept()
-            start_time: float = time.time()
-            print(f"Connection from {client_address}")
+            try:
+                client_socket, client_address = self.server_socket.accept()
+                start_time: float = time.time()
+                print(f"Connection from {client_address}")
 
-            ## read the configs again to check if reread_on_query has changed
-            configs = read_config(self.config_path)
+                ## read the configs again to check if reread_on_query has changed
+                configs = read_config(self.config_path)
 
-            ## if reread_on_query if true , update the self.config.linux-path and re-load the database
-            if configs.reread_on_query:
-                self.configs.linuxpath = configs.linuxpath
-                self.load_database()   
+                ## if reread_on_query if true , update the self.config.linux-path and re-load the database
+                if configs.reread_on_query:
+                    self.configs.linuxpath = configs.linuxpath
+                    self.load_database()   
 
-            client_handler = threading.Thread(
-                target=self._handle_client,
-                args=(client_socket, start_time, client_address)
-            )
-            client_handler.start()
+                client_handler = threading.Thread(
+                    target=self._handle_client,
+                    args=(client_socket, start_time, client_address)
+                )
+                client_handler.start()
+            except ssl.SSLError as e:
+                print(f'SSL ERROR: {e}')
 
     def _handle_client(self, client_socket: socket.socket, start_time: float, client_address: str):
         """ Handles communication with a connected client. 

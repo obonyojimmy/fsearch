@@ -1,4 +1,4 @@
-.PHONY:  dev install help start service stop_service test benchmark search
+.PHONY:  dev install help start service stop test benchmark client
 
 dev:
 	pip install -e .
@@ -15,7 +15,7 @@ start:
 service:
 	fsearch.service -c config.ini
 
-stop_service:
+stop:
 	systemctl --user stop fsearch.service
 
 status:
@@ -27,6 +27,7 @@ test:
 benchmark:
 	fsearch benchmark -r reports/benchmark.pdf -s samples/200k.txt -n 10
 
-search:
-	fsearch client -c config.ini '11;0;23;11;0;19;5;0;'
-	fsearch client -c config.ini '11;0;23;11;0;19;5'
+client:
+	#python client.py --host 0.0.0.0 -c .certs/server.crt -p 8080 '11;0;23;11;0;19;5;0;'
+	python client.py --host 0.0.0.0 -c .certs/server.crt -k .certs/server.key -p 8080 '11;0;23;11;0;19;5;0;'
+	#client.py -h 0.0.0.0 -p 8080 '11;0;23;11;0;19;5'
