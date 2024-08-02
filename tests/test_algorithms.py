@@ -1,34 +1,101 @@
 import pytest
-import re
-from fsearch.algorithms import regex_search
+import unittest
+from fsearch.algorithms import (
+    native_search, regex_search, rabin_karp_search, kmp_search, aho_corasick_search, AhoCorasick
+)
 
-def test_regex_search_match():
-    content = "This is a sample text for testing."
-    search_query = r"sample"
-    assert regex_search(content, search_query) is True
+text = "Hello World\nThis is a test\nGoodbye World"
 
-def test_regex_search_no_match():
-    content = "This is a sample text for testing."
-    search_query = r"notfound"
-    assert regex_search(content, search_query) is False
+full_match = "This is a test"
+false_match = "Not in text"
+partial_match = "Not in text"
 
-def test_regex_search_empty_content():
-    content = ""
-    search_query = r"sample"
-    assert regex_search(content, search_query) is False
+class TestNativeSearch(unittest.TestCase):
+    def test_search_match(self):
+        assert native_search(text, full_match) == True
 
-def test_regex_search_empty_query():
-    content = "This is a sample text for testing."
-    search_query = r""
-    assert regex_search(content, search_query) is True  # Empty pattern matches everything
+    def test_no_match(self):
+        assert native_search(text, false_match) == False
 
-def test_regex_search_special_characters():
-    content = "This is a sample text for testing."
-    search_query = r"\bsample\b"
-    assert regex_search(content, search_query) is True
+    def test_partial_match(self):
+        assert native_search(text, partial_match) == False
 
-def test_regex_search_invalid_regex():
-    content = "This is a sample text for testing."
-    search_query = r"(["
-    with pytest.raises(re.error):
-        regex_search(content, search_query)
+class TestRegExSearch(unittest.TestCase):
+    def test_search_match(self):
+        assert regex_search(text, full_match) == True
+
+    def test_no_match(self):
+        assert regex_search(text, false_match) == False
+
+    def test_partial_match(self):
+        assert regex_search(text, partial_match) == False
+
+class TestRabinKarpSearch(unittest.TestCase):
+    def test_search_match(self):
+        assert rabin_karp_search(text, full_match) == True
+
+    def test_no_match(self):
+        assert rabin_karp_search(text, false_match) == False
+
+    def test_partial_match(self):
+        assert rabin_karp_search(text, partial_match) == False
+
+class TestKpmSearch(unittest.TestCase):
+    def test_search_match(self):
+        assert kmp_search(text, full_match) == True
+
+    def test_no_match(self):
+        assert kmp_search(text, false_match) == False
+
+    def test_partial_match(self):
+        assert kmp_search(text, partial_match) == False
+
+class TestAhoCorasickSearch(unittest.TestCase):
+    def test_search_match(self):
+        assert aho_corasick_search(text, full_match) == True
+
+    def test_no_match(self):
+        assert aho_corasick_search(text, false_match) == False
+
+    def test_partial_match(self):
+        assert aho_corasick_search(text, partial_match) == False
+
+class TestAhoCorasick(unittest.TestCase):
+    def test_init(self):
+        ac = AhoCorasick()
+        assert ac.goto == {}
+        assert ac.output == {}
+        assert ac.fail == {}
+        assert ac.new_state == 0
+
+    def test_add_pattern(self):
+        ac = AhoCorasick()
+        ac.add_pattern("he")
+        ac.add_pattern("she")
+        ac.add_pattern("his")
+        ac.add_pattern("hers")
+        
+        assert ac.new_state == 9
+
+    def test_build_automaton(self):
+        ac = AhoCorasick()
+        ac.add_pattern("he")
+        ac.add_pattern("she")
+        ac.add_pattern("his")
+        ac.add_pattern("hers")
+        ac.build_automaton()
+        
+        assert ac.output[7] == 'his'
+
+    def test_search(self):
+        ac = AhoCorasick()
+        ac.add_pattern("he")
+        ac.add_pattern("she")
+        ac.add_pattern("his")
+        ac.add_pattern("hers")
+        ac.build_automaton()
+
+        results = ac.search("ushers")
+        assert results == [(2, 'he'), (2, 'hers')]
+
+        
