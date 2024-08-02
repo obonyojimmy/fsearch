@@ -46,12 +46,13 @@ def read_config(config_path: str) -> Config:
     print(f"Using configurations:", asdict(config))
     return config
 
-def read_file(filepath: str) -> str:
+def read_file(filepath: str, max_lines: int = 250000) -> str:
     """
-    Reads the contents of a file and returns a list of lines.
+    Reads the first (max_line) lines from a file and returns them as a single string.
 
     Args:
       - filepath (str): The path to the file to read.
+      - max_lines (int): The max number of lines to read from the file.Default to 250000
 
     Returns:
       str: A str of the contents from the file, or None.
@@ -62,11 +63,19 @@ def read_file(filepath: str) -> str:
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"The file '{filepath}' does not exist.")
 
+    lines = []
+
     try:
         with open(filepath, 'r') as file:
-            return file.read()
+            for i in range(max_lines):
+                line = file.readline()
+                if not line:
+                    break
+                lines.append(line)
     except Exception as e:
         return None
+    
+    return '\n'.join(lines)
 
 def compute_lps(pattern: str) -> List[int]:
     """

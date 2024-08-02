@@ -3,6 +3,7 @@ import pytest
 import unittest
 import socket
 import ssl
+import time
 from unittest.mock import patch, MagicMock
 from fsearch.server import Server
 from fsearch.config import Config
@@ -48,7 +49,9 @@ class TestServer:
         mock_client_socket.recv.return_value = b'hello\x00\x00'
 
         with patch.object(mock_client_socket, 'close') as mock_close:
-            server._handle_client(mock_client_socket)
+            start_time = time.time()
+            client_address = '1.1.1.1.1'
+            server._handle_client(mock_client_socket, start_time, client_address)
 
             mock_client_socket.recv.assert_called_once_with(1024)
             mock_client_socket.sendall.assert_called_once_with(b'STRING NOT FOUND')

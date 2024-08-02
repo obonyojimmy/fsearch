@@ -3,6 +3,7 @@
 import os
 import socket
 import ssl
+import time
 import threading
 from fsearch.config import Config
 from fsearch.utils import read_config, read_file, generate_certs
@@ -96,6 +97,7 @@ class Server:
         """ Handles incoming connections and starts a new thread for each client. """
         while self.is_running:
             client_socket, client_address = self.server_socket.accept()
+            start_time: float = time.time()
             print(f"Connection from {client_address}")
 
             ## read the configs again to check if reread_on_query has changed
@@ -108,22 +110,25 @@ class Server:
 
             client_handler = threading.Thread(
                 target=self._handle_client,
-                args=(client_socket,)
+                args=(client_socket, start_time, client_address)
             )
             client_handler.start()
 
-    def _handle_client(self, client_socket: socket.socket):
+    def _handle_client(self, client_socket: socket.socket, start_time: float, client_address: str):
         """ Handles communication with a connected client. 
         
         Args:
             - client_socket (socket.socket): The server socket connection
         """
         try:
+            
             ## receive connection payload and strip null characters ie '\x00' and decode to utf-8
             request_data = client_socket.recv(self.max_payload).rstrip(b'\x00').decode('utf-8')
             print(f"Received: {request_data}")
             response = self.search(request_data)
             client_socket.sendall(response.encode('utf-8'))
+            duration: float = time.time() - start_time
+            print(f"DEBUG: Query: {request_data}, IP: {client_address}, + Execution Time: {duration}")
         except Exception as e:
             print(f"Error handling client: {e}")
         finally:
