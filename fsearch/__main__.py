@@ -7,7 +7,7 @@ import sys
 from typing import Optional
 from fsearch import __app_name__, __version__
 from fsearch.server import Server
-from fsearch.utils import benchmark_algorithms
+from fsearch.utils import benchmark_algorithms, logger
 
 class DefaultArgs(argparse.Namespace):
     subcommand: str
@@ -91,14 +91,14 @@ def main():
         config_path = start_args.config
         if not os.path.isabs(config_path):
             config_path = os.path.abspath(config_path)
-        print(f"Starting server with configuration file: {config_path}", "\n\n")
+        logger.debug(f"Starting server with configuration file: {config_path}")
         server = Server(config_path)
         server.connect()
     elif args.subcommand == 'benchmark':
         benchmark_args: BenchmarkArgs = args
         report_path = benchmark_args.report_path
         if not benchmark_args.sample and not benchmark_args.sample_dir:
-            print("Must provide a sample path or directory with -s or -d args")
+            logger.debug("Must provide a sample path or directory with -s or -d args")
         samples = []
         if benchmark_args.sample:
             samples = [benchmark_args.sample]
@@ -106,11 +106,11 @@ def main():
             samples = [os.path.join(benchmark_args.sample_dir, f) for f in os.listdir(benchmark_args.sample_dir) if os.path.isfile(os.path.join(benchmark_args.sample_dir, f))]
             
         size = benchmark_args.size
-        print(f"Running benchmarks with samples: {samples}, report path: {report_path}", "\n\n")
+        logger.debug(f"Running benchmarks with samples: {samples}, report path: {report_path}")
         benchmark_algorithms(samples, report_path, size)
     elif args.subcommand == 'stop':
         stop_args: StopArgs = args
-        print("Stopping the server")
+        logger.debug("Stopping the server")
         # todo: logic to stop the server
     else:
         parser.print_help()

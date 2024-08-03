@@ -3,6 +3,7 @@
 
 import base64
 import configparser
+import logging
 import os
 import random
 import subprocess
@@ -10,6 +11,16 @@ import timeit
 from io import BytesIO
 from typing import Tuple, Dict, List
 from fsearch.config import Config
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s : [%(levelname)s] - %(message)s',
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 def read_config(config_path: str) -> Config:
     """ Reads server configurations from file to a `Config` object
@@ -167,7 +178,7 @@ def plot_benchmarks(results: Dict[str, Dict[str, float]]) -> BytesIO:
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        print('please install matplotlib. Run `pip install fsearch[benchmark]` or `pip install matplotlib')
+        logger.error('please install matplotlib. Run `pip install fsearch[benchmark]` or `pip install matplotlib')
         raise ImportError
     
     algorithms = list(results.keys())
@@ -239,7 +250,7 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
         # ensure the required extra dependencies are installed
         import matplotlib, weasyprint  # type: ignore
     except ImportError:
-        print('Please install matplotlib and weasyprint dependencies. Run `pip install fsearch[benchmark]` or `pip install matplotlib weasyprint` to install them')
+        logger.debug('Please install matplotlib and weasyprint dependencies. Run `pip install fsearch[benchmark]` or `pip install matplotlib weasyprint` to install them')
         return
     
     # internal package imports
@@ -270,9 +281,9 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
                     results[name][file_size_label].append(time_taken)
         
         except FileNotFoundError:
-            print(f"File at path {file_path} not found.")
+            logger.error(f"File at path {file_path} not found.")
         except Exception as e:
-            print(f"An error occurred with file {file_path}: {e}")
+            logger.error(f"An error occurred with file {file_path}: {e}")
 
     avg_results = {algorithm: {file_size: (sum(times) / len(times)) if len(times) > 0 else 0 for file_size, times in result.items()} for algorithm, result in results.items()}
     sorted_results = dict(sorted(avg_results.items(), key=lambda item: (sum(item[1].values()) / len(item[1].values())) if len(item[1].values()) > 0 else float('inf')))
@@ -286,4 +297,4 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
     
     report_template = benchmark_template.format(table_str=table_str, plot_img=img_str)
     weasyprint.HTML(string=report_template).write_pdf(report_path)
-    print(f"Benchmark report saved to {report_path}")
+    logger.debug(f"Benchmark report saved to {report_path}")

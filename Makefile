@@ -22,7 +22,7 @@ status:
 	systemctl --user status fsearch.service
 
 test:
-	pytest --fsearch-config /home/jimmy/Projects/Personal/fsearch/config.ini --cov=fsearch -v
+	pytest --fsearch-config config.ini --cov=fsearch -v
 
 benchmark:
 	#fsearch benchmark -r reports/benchmark.pdf -s samples/200k.txt -n 1

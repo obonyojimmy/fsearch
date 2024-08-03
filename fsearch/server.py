@@ -8,7 +8,7 @@ import time
 import threading
 from dataclasses import asdict
 from fsearch.config import Config
-from fsearch.utils import read_config, read_file, generate_certs
+from fsearch.utils import logger, read_config, read_file, generate_certs
 from fsearch.algorithms import regex_search
 
 class Server:
@@ -77,7 +77,7 @@ class Server:
         if self.configs.ssl: ## load ssl if only ssl is set to true
             self.load_ssl() 
         
-        print(f"DEBUG: Using configurations:", asdict(self.configs))
+        logger.debug(f"Using configurations {asdict(self.configs)}")
 
         self.load_database()
         self.is_running = False
@@ -106,12 +106,12 @@ class Server:
         try:
             self.server_socket.bind((host, port))
         except OSError as e:
-            print(f'SERVER ERROR: {e}')
+            logger.error(f'SERVER ERROR: {e}')
             sys.exit()
 
         self.server_socket.listen(self.max_conn)
         self.is_running = True
-        print(f"Server started on {host}:{port}")
+        logger.debug(f"Server started on {host}:{port}")
         self.receive()
 
     def receive(self):
@@ -123,7 +123,7 @@ class Server:
                 
                 ## read the configs again to check if reread_on_query has changed
                 configs = read_config(self.config_path)
-                print(f"DEBUG: [REREAD_ON_QUERY]", self.configs.reread_on_query)
+                logger.debug(f"DEBUG: [REREAD_ON_QUERY] = {self.configs.reread_on_query}")
 
                 ## if reread_on_query if true , update the self.config.linux-path and re-load the database
                 if configs.reread_on_query:
@@ -136,7 +136,7 @@ class Server:
                 )
                 client_handler.start()
             except ssl.SSLError as e:
-                print(f'SSL ERROR: {e}')
+                logger.error(f'SSL ERROR: {e}')
 
     def _handle_client(self, client_socket: socket.socket, start_time: float, client_address: str):
         """ Handles communication with a connected client. 
@@ -148,13 +148,12 @@ class Server:
             
             ## receive connection payload and strip null characters ie '\x00' and decode to utf-8
             request_data = client_socket.recv(self.max_payload).rstrip(b'\x00').decode('utf-8')
-            #print(f"Received: {request_data}")
             response = self.search(request_data)
             client_socket.sendall(response.encode('utf-8'))
             duration: float = time.time() - start_time
-            print(f"DEBUG: Query: {request_data}, IP: {client_address}, + Execution Time: {duration}")
+            logger.debug(f"DEBUG: Query: {request_data}, IP: {client_address}, + Execution Time: {duration}")
         except Exception as e:
-            print(f"Error handling client: {e}")
+            logger.error(f"Error handling client: {e}")
         finally:
             client_socket.close()
 
@@ -162,7 +161,7 @@ class Server:
         """ Stops the server and closes the socket. """
         self.is_running = False
         self.server_socket.close()
-        print("Server stopped")
+        logger.debug("Server stopped")
 
     def search(self, query: str) -> str:
         """ searches for query in the server database with selected search algorithm

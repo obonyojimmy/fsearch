@@ -67,7 +67,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart={exec_path} start --config {config_file} --port {port}
+ExecStart={exec_path} start --config {config_file}
 WorkingDirectory={working_dir}
 Restart=on-failure
 
