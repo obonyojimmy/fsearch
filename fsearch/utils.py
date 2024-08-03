@@ -153,12 +153,13 @@ def generate_samples(file_path: str, size: int = 10) -> List[str]:
     sampled_lines = random.sample(lines, size)
     return sampled_lines
 
-def plot_benchmarks(results: Dict[str, float]) -> BytesIO:
+def plot_benchmarks(results: Dict[str, Dict[str, float]]) -> BytesIO:
     """
-    Plots a bar chart for the benchmark results and returns the BytesIO object.
+    Plots a grouped bar chart for the benchmark results and returns the BytesIO object.
 
     Args:
-        results (dict): A dictionary containing the algorithm names as keys and the average execution time as values.
+        results (dict): A dictionary containing the algorithm names as keys and another dictionary as values,
+                        where the keys are file line numbers and the values are execution times.
 
     Returns:
         BytesIO: The BytesIO object containing the plot image.
@@ -169,46 +170,66 @@ def plot_benchmarks(results: Dict[str, float]) -> BytesIO:
         print('please install matplotlib. Run `pip install fsearch[benchmark]` or `pip install matplotlib')
         raise ImportError
     
-    names = list(results.keys())
-    times = list(results.values())
-    
-    plt.figure(figsize=(6, 6))
-    plt.bar(names, times, color='skyblue')
-    plt.xlabel('Search Algorithms')
-    plt.ylabel('Time (seconds)')
-    plt.title('Benchmark of Search Algorithms')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    
+    algorithms = list(results.keys())
+    file_sizes = list(results[algorithms[0]].keys())
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+    width = 0.15
+    x = range(len(file_sizes))
+
+    for i, algorithm in enumerate(algorithms):
+        times = [results[algorithm][file_size] for file_size in file_sizes]
+        ax.bar([pos + i * width for pos in x], times, width, label=algorithm)
+
+    ax.set_xlabel('File Size')
+    ax.set_ylabel('Time (seconds)')
+    ax.set_title('Benchmark of Search Algorithms')
+    ax.set_xticks([pos + width * (len(algorithms) / 2) for pos in x])
+    ax.set_xticklabels(file_sizes)
+    ax.legend()
+
     buffer = BytesIO()
+    plt.tight_layout()
     plt.savefig(buffer, format='png')
     buffer.seek(0)
     plt.close()
 
     return buffer
 
-def print_benchmarks(results: Dict[str, float]):
+def print_benchmarks(results: Dict[str, Dict[str, float]]) -> str:
     """
     Pretty prints the benchmark results as a table.
 
-    Arags:
-        results (dict[str, float]): A dictionary with algorithm names as keys and their respective times as values.
-    """
-    headers = ["Algorithm", "Time (seconds)"]
-    row_format = "{:<20} {:<15}"
-    print(row_format.format(*headers))
-    print("-" * 35)
-    for algorithm, time_taken in results.items():
-        print(row_format.format(algorithm, f"{time_taken:.6f}"))
-    print("-" * 35, "\n")
+    Args:
+        results (dict[str, dict[str, float]]): A dictionary with algorithm names as keys and dictionaries of file sizes and times as values.
 
-def benchmark_algorithms(file_path: str, report_path: str, sample_size: int = 10):
+    Returns:
+    str: The table string representation of the results.
     """
-    Benchmarks the different search algorithms using the content of the specified file and patterns
-    sampled from the file, then creates a PDF report with the plotted benchmark results using WeasyPrint.
+    file_sizes = list(next(iter(results.values())).keys())
+    headers = ["Algorithm"] + file_sizes + ["Average"]
+    row_format = "{:<20}" + "{:<15}" * (len(headers) - 1)
+    
+    table_str = row_format.format(*headers) + "\n"
+    table_str += "-" * 20 + "-" * 15 * (len(headers) - 1) + "\n"
+
+    for algorithm, times in results.items():
+        avg_time = sum(times.values()) / len(times)
+        row = [algorithm] + [f"{times[file_size]:.6f}" for file_size in file_sizes] + [f"{avg_time:.6f}"]
+        table_str += row_format.format(*row) + "\n"
+
+    table_str += "-" * 20 + "-" * 15 * (len(headers) - 1) + "\n"
+    print(table_str)
+    return table_str
+
+def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: int = 1):
+    """
+    Benchmarks the different search algorithms using the content of the specified files and patterns
+    sampled from the files, then creates a PDF report with the plotted benchmark results using WeasyPrint.
 
     Args:
-        file_path (str): The path to the search file.
+        file_paths (list): A list of paths to the search files.
+        pattern (str): The pattern to search for in the files.
         report_path (str): The path the benchmark PDF report will be saved to.
         sample_size (int): Number of lines to sample for generating patterns.
 
@@ -227,44 +248,46 @@ def benchmark_algorithms(file_path: str, report_path: str, sample_size: int = 10
     from fsearch.templates import benchmark_template
 
 
-    try:
-        patterns = generate_samples(file_path, sample_size)
-        text = read_file(file_path)
-        
-        algorithms = {
-            'Native Search': native_search,
-            'Rabin-Karp Search': rabin_karp_search,
-            'KMP Search': kmp_search,
-            'Aho-Corasick Search': aho_corasick_search,
-            'Regex Search': regex_search
-        }
-        
-        results = {}
-        for pattern in patterns:
-            for name, algorithm in algorithms.items():
-                timer = timeit.Timer(lambda: algorithm(text, pattern.strip()))
-                time_taken = timer.timeit(number=10)  # Run the algorithm 10 times and get the average time
-                if name not in results:
-                    results[name] = []
-                results[name].append(time_taken)
-        
-        # Average the results for each algorithm
-        avg_results = {name: sum(times) / len(times) for name, times in results.items()}
-        sorted_results = dict(sorted(avg_results.items(), key=lambda item: item[1]))
-        
-        # Pretty print the results
-        print_benchmarks(sorted_results)
 
-        # Plot the results
-        plot_img = plot_benchmarks(sorted_results)
-        img_str = base64.b64encode(plot_img.read()).decode('utf-8')
-        
-        # Create a pdf report of the results
-        report_template = benchmark_template.format(plot_img=img_str)
-        weasyprint.HTML(string=report_template).write_pdf(report_path)
-        print(f"Benchmark report saved to {report_path}")
+    algorithms = {
+        'Native Search': native_search,
+        'Rabin-Karp Search': rabin_karp_search,
+        'KMP Search': kmp_search,
+        'Aho-Corasick Search': aho_corasick_search,
+        'Regex Search': regex_search
+    }
     
-    except FileNotFoundError:
-        print(f"File at path {file_path} not found.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+    results = {algorithm: {} for algorithm in algorithms.keys()}
+
+    for file_path in file_paths:
+        try:
+            text = read_file(file_path)
+            #file_size = os.path.getsize(file_path)
+            #file_size_label = f"{file_size / 1024:.2f} KB" if file_size < 1024 ** 2 else f"{file_size / 1024 ** 2:.2f} MB"
+            file_size_label = sum(1 for i in open(file_path, 'rb'))
+            pattern = generate_samples(file_path, sample_size)[0]
+            for name, algorithm in algorithms.items():
+                timer = timeit.Timer(lambda: algorithm(text, pattern))
+                time_taken = timer.timeit(number=1)  # Run the algorithm 10 times and get the average time
+                if file_size_label not in results[name]:
+                    results[name][file_size_label] = []
+                results[name][file_size_label].append(time_taken)
+        
+        except FileNotFoundError:
+            print(f"File at path {file_path} not found.")
+        except Exception as e:
+            print(f"An error occurred with file {file_path}: {e}")
+
+    avg_results = {algorithm: {file_size: sum(times) / len(times) for file_size, times in result.items()} for algorithm, result in results.items()}
+    sorted_results = dict(sorted(avg_results.items(), key=lambda item: sum(item[1].values()) / len(item[1].values())))
+
+    # Pretty print the results
+    table_str = print_benchmarks(sorted_results)
+
+    # Plot the results
+    plot_img = plot_benchmarks(sorted_results)
+    img_str = base64.b64encode(plot_img.read()).decode('utf-8')
+    
+    report_template = benchmark_template.format(table_str=table_str, plot_img=img_str)
+    weasyprint.HTML(string=report_template).write_pdf(report_path)
+    print(f"Benchmark report saved to {report_path}")

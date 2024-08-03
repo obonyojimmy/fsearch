@@ -23,7 +23,8 @@ class StopArgs(argparse.Namespace):
 
 class BenchmarkArgs(argparse.Namespace):
     report_path: str
-    sample: str
+    sample: Optional[str]
+    sample_dir: Optional[str]
     size: int
 
 def main():
@@ -50,14 +51,20 @@ def main():
     parser_benchmark.add_argument(
         "-s", "--sample",
         type=str,
-        required=True,
+        #required=True,
         help="Sample to benchmark"
+    )
+    parser_benchmark.add_argument(
+        "-d", "--sample_dir",
+        type=str,
+        #required=True,
+        help="A directory that contains the Sample files to benchmark"
     )
     parser_benchmark.add_argument(
         "-n", "--size",
         type=int,
-        default=10,
-        help="Size of the benchmark sample (default: 10)"
+        default=1,
+        help="Size of the number of patterns to sample with (default: 1)"
     )
 
     # Subcommand: stop
@@ -90,10 +97,17 @@ def main():
     elif args.subcommand == 'benchmark':
         benchmark_args: BenchmarkArgs = args
         report_path = benchmark_args.report_path
-        sample = benchmark_args.sample
+        if not benchmark_args.sample and not benchmark_args.sample_dir:
+            print("Must provide a sample path or directory with -s or -d args")
+        samples = []
+        if benchmark_args.sample:
+            samples = [benchmark_args.sample]
+        if benchmark_args.sample_dir:
+            samples = [os.path.join(benchmark_args.sample_dir, f) for f in os.listdir(benchmark_args.sample_dir) if os.path.isfile(os.path.join(benchmark_args.sample_dir, f))]
+            
         size = benchmark_args.size
-        print(f"Running benchmarks with sample: {sample}, size: {size}, report path: {report_path}", "\n\n")
-        benchmark_algorithms(sample, report_path, size)
+        print(f"Running benchmarks with samples: {samples}, report path: {report_path}", "\n\n")
+        benchmark_algorithms(samples, report_path, size)
     elif args.subcommand == 'stop':
         stop_args: StopArgs = args
         print("Stopping the server")
