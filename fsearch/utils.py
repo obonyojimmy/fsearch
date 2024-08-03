@@ -229,7 +229,6 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
 
     Args:
         file_paths (list): A list of paths to the search files.
-        pattern (str): The pattern to search for in the files.
         report_path (str): The path the benchmark PDF report will be saved to.
         sample_size (int): Number of lines to sample for generating patterns.
 
@@ -247,8 +246,6 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
     from fsearch.algorithms import native_search, regex_search, rabin_karp_search, kmp_search, aho_corasick_search
     from fsearch.templates import benchmark_template
 
-
-
     algorithms = {
         'Native Search': native_search,
         'Rabin-Karp Search': rabin_karp_search,
@@ -262,24 +259,23 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
     for file_path in file_paths:
         try:
             text = read_file(file_path)
-            #file_size = os.path.getsize(file_path)
-            #file_size_label = f"{file_size / 1024:.2f} KB" if file_size < 1024 ** 2 else f"{file_size / 1024 ** 2:.2f} MB"
             file_size_label = sum(1 for i in open(file_path, 'rb'))
-            pattern = generate_samples(file_path, sample_size)[0]
-            for name, algorithm in algorithms.items():
-                timer = timeit.Timer(lambda: algorithm(text, pattern))
-                time_taken = timer.timeit(number=1)  # Run the algorithm 10 times and get the average time
-                if file_size_label not in results[name]:
-                    results[name][file_size_label] = []
-                results[name][file_size_label].append(time_taken)
+            patterns = generate_samples(file_path, sample_size)
+            for pattern in patterns:
+                for name, algorithm in algorithms.items():
+                    timer = timeit.Timer(lambda: algorithm(text, pattern))
+                    time_taken = timer.timeit(number=1)  # Run the algorithm 1 time and get the time
+                    if file_size_label not in results[name]:
+                        results[name][file_size_label] = []
+                    results[name][file_size_label].append(time_taken)
         
         except FileNotFoundError:
             print(f"File at path {file_path} not found.")
         except Exception as e:
             print(f"An error occurred with file {file_path}: {e}")
 
-    avg_results = {algorithm: {file_size: sum(times) / len(times) for file_size, times in result.items()} for algorithm, result in results.items()}
-    sorted_results = dict(sorted(avg_results.items(), key=lambda item: sum(item[1].values()) / len(item[1].values())))
+    avg_results = {algorithm: {file_size: (sum(times) / len(times)) if len(times) > 0 else 0 for file_size, times in result.items()} for algorithm, result in results.items()}
+    sorted_results = dict(sorted(avg_results.items(), key=lambda item: (sum(item[1].values()) / len(item[1].values())) if len(item[1].values()) > 0 else float('inf')))
 
     # Pretty print the results
     table_str = print_benchmarks(sorted_results)
