@@ -4,3 +4,6 @@ __pycache__
 *.egg-info/
 .certs
 .coverage
+Archive.zip
+samples/*
+!samples/200k.txt

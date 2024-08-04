@@ -7,7 +7,7 @@ import sys
 from typing import Optional
 from fsearch import __app_name__, __version__
 from fsearch.server import Server
-from fsearch.utils import benchmark_algorithms, logger
+from fsearch.utils import benchmark_algorithms, logger, create_sample
 
 class DefaultArgs(argparse.Namespace):
     subcommand: str
@@ -25,6 +25,10 @@ class BenchmarkArgs(argparse.Namespace):
     report_path: str
     sample: Optional[str]
     sample_dir: Optional[str]
+    size: int
+
+class SamplesArgs(argparse.Namespace):
+    #file: str
     size: int
 
 def main():
@@ -70,6 +74,22 @@ def main():
     # Subcommand: stop
     subparsers.add_parser('stop', help='Stop the server')
 
+    # Subcommand: test
+    parser_samples = subparsers.add_parser('samples', help='Test data generator')
+
+    #parser_samples.add_argument(
+    #    "-f", "--file",
+    #    type=str,
+    #    required=True,
+    #    help="The input file that will be used to generate sample out file"
+    #)
+    parser_samples.add_argument(
+        "-s", "--size",
+        type=int,
+        default=1,
+        help="Size of sample file out in mb"
+    )
+
 
     # Default (no subcommand)
     parser.add_argument(
@@ -112,6 +132,10 @@ def main():
         stop_args: StopArgs = args
         logger.debug("Stopping the server")
         # todo: logic to stop the server
+    elif args.subcommand == 'samples':
+        samples_args: SamplesArgs = args
+        logger.debug("Geneerating test sample file")
+        create_sample(samples_args.size)
     else:
         parser.print_help()
 

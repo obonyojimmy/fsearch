@@ -75,7 +75,8 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         if self.configs.ssl: ## load ssl if only ssl is set to true
-            self.load_ssl() 
+            pass
+            #self.load_ssl() 
         
         logger.debug(f"Using configurations {asdict(self.configs)}")
 
@@ -122,12 +123,12 @@ class Server:
                 start_time: float = time.time()
                 
                 ## read the configs again to check if reread_on_query has changed
-                configs = read_config(self.config_path)
+                self.configs = read_config(self.config_path)
                 logger.debug(f"DEBUG: [REREAD_ON_QUERY] = {self.configs.reread_on_query}")
 
                 ## if reread_on_query if true , update the self.config.linux-path and re-load the database
-                if configs.reread_on_query:
-                    self.configs.linuxpath = configs.linuxpath
+                if self.configs.reread_on_query:
+                    self.configs.linuxpath = self.configs.linuxpath
                     self.load_database()   
 
                 client_handler = threading.Thread(

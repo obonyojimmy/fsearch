@@ -1,4 +1,4 @@
-.PHONY:  dev install help start service stop test benchmark client
+.PHONY:  dev install help start service stop test benchmark client logs samples
 
 dev:
 	pip install -e .
@@ -20,6 +20,12 @@ stop:
 
 status:
 	systemctl --user status fsearch.service
+
+logs:
+	journalctl --user -u fsearch.service -f
+
+samples:
+	fsearch samples -s 10
 
 test:
 	pytest --fsearch-config config.ini --cov=fsearch -v

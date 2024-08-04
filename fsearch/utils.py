@@ -7,6 +7,7 @@ import logging
 import os
 import random
 import subprocess
+import string
 import timeit
 from io import BytesIO
 from typing import Tuple, Dict, List
@@ -143,6 +144,30 @@ def generate_certs(cert_dir: str = './.certs') -> Tuple[str, str]:
     ])
 
     return certfile, keyfile
+
+def generate_random_string(chars):
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=chars))
+    
+def create_sample(size_mb: int, out_dir: str = 'samples'):
+    # Calculate the target size in bytes
+    target_size_bytes = size_mb * 1024 * 1024
+    line_length = 10
+    line_with_newline_length = line_length + 1  # Each line is 10 chars + 1 newline character
+    num_lines = target_size_bytes // line_with_newline_length
+
+    # Calculate the number of lines in thousands, rounded down to the nearest thousand
+    k_lines =  round(num_lines / 1000)
+
+    file_name = f"{k_lines}k.txt"
+    file_path = os.path.join(out_dir, file_name)
+    
+    with open(file_path, 'w') as new_file:
+        bytes_written = 0
+        while bytes_written < target_size_bytes:
+            random_string = generate_random_string(line_length)
+            new_file.write(random_string + '\n')
+            bytes_written += line_with_newline_length
+
 
 def generate_samples(file_path: str, size: int = 10) -> List[str]:
     """
