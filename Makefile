@@ -1,4 +1,4 @@
-.PHONY:  dev install help start service stop test benchmark client logs samples
+.PHONY:  dev install help start service stop test benchmark client logs samples perf
 
 dev:
 	pip install -e .
@@ -29,6 +29,11 @@ samples:
 
 test:
 	pytest --fsearch-config config.ini --cov=fsearch -v
+	#pytest tests/test_server.py --fsearch-config config.ini -s
+
+perf:
+	#pytest --fsearch-config config.ini --cov=fsearch -v
+	python tests/test_performance.py
 
 benchmark:
 	#fsearch benchmark -r reports/benchmark.pdf -s samples/200k.txt -n 1

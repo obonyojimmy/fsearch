@@ -46,9 +46,12 @@ def read_config(config_path: str) -> Config:
         raise Exception(f"Error reading the config file: {e}")
 
     defaults = dict(config_parser.defaults())
-    sections = {section: dict(config_parser.items(section)) for section in config_parser.sections()}
-
-    config = Config(**defaults, **sections)
+    for section in config_parser.sections():
+        for k, v in config_parser.items(section):
+            if k not in defaults:
+                defaults[k] = v
+    
+    config = Config(**defaults)
 
     # Check if the config option linuxpath, path is relative
     if not os.path.isabs(config.linuxpath):

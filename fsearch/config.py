@@ -16,17 +16,21 @@ class Config:
     reread_on_query: bool = False
     extra: dict = field(default_factory=dict)
 
-    def __post_init__(self):
-        for key, value in self.extra.items():
-            setattr(self, key, value)
-
     def __init__(self, **kwargs):
         # Initialize the dataclass fields
         for f in fields(self):
-            if f.name in kwargs:
-                setattr(self, f.name, kwargs.pop(f.name))
+            key = f.name.lower()
+            if key in kwargs:
+                val: str = kwargs.pop(key)
+                if f.type.__name__ == 'bool' and not isinstance(val, bool):
+                    val = val.lower() in ("yes", "true", "on" "1")
+                
+                if f.type.__name__ == 'int' and not isinstance(val, int):
+                    val = int(val)
+                
+                setattr(self, key, val)
             else:
-                setattr(self, f.name, f.default)
+                setattr(self, key, f.default)
 
         # Store any additional kwargs in the extra dictionary
         self.extra = kwargs
