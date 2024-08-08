@@ -64,12 +64,24 @@ class TestServer(unittest.TestCase):
         mock_socket_inst = mock_socket.return_value
         server = Server(self.config_path)
         host, port = server.configs.host, server.configs.port
-        with patch.object(server, 'receive', return_value=None) as mock_receive:
-            server.connect()
-            mock_socket_inst.bind.assert_called_once_with((host, port))
-            mock_socket_inst.listen.assert_called_once_with(server.max_conn)
-            self.assertTrue(server.is_running)
-            mock_receive.assert_called_once()
+        with patch.object(server, 'receive', return_value=None) as mock_receive, \
+            patch.object(server, 'stop') as mock_stop, \
+            patch('sys.exit') as mock_sys_exit:
+                try:
+                    server.connect()
+                except KeyboardInterrupt:
+                    mock_stop.assert_called_once()
+                    mock_sys_exit.assert_called_once()
+                except OSError:
+                    mock_sys_exit.assert_called_once()
+
+                mock_socket_inst.bind.assert_called_once_with((host, port))
+                mock_socket_inst.listen.assert_called_once_with(server.max_conn)
+                #mock_bind.assert_called_once()
+                mock_receive.assert_called_once()
+                self.assertTrue(server.is_running)
+                assert server.is_running
+                mock_sys_exit.assert_not_called()
 
     @patch('fsearch.server.Server', autospec=True, wraps=Server)
     @patch('fsearch.server.read_config')

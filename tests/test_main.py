@@ -1,19 +1,34 @@
+import pytest
 import unittest
 from unittest.mock import patch, MagicMock
 import sys
-from fsearch.__main__ import main
+import argparse
+from fsearch.__main__ import main, DefaultArgs, StartArgs, StopArgs, BenchmarkArgs, SamplesArgs
 
+@pytest.mark.usefixtures("config_file_cls")
 class TestFsearchMain(unittest.TestCase):
 
+    #@patch('fsearch.__main__.argparse.ArgumentParser')
+    @patch('fsearch.__main__.os')
     @patch('fsearch.__main__.Server')
     @patch('fsearch.__main__.logger')
-    def test_start_subcommand(self, mock_logger, mock_server):
-        testargs = ["fsearch", "start", "--config", "test_config.yaml"]
+    def test_start_subcommand(self, mock_logger, mock_server, mock_os):
+        #mock_argparse.add_subparsers.side_effect = MagicMock()
+        #mock_argparse.parse_args.return_value = StartArgs(subcommand='start', config='test_config.yaml')
+        testargs = ["fsearch", "start", "--config", self.config_file]
         with patch.object(sys, 'argv', testargs):
-            main()
-            #mock_logger.debug.assert_called_with("Starting server with configuration file: /absolute/path/to/test_config.yaml")
-            #mock_server.assert_called_with("/absolute/path/to/test_config.yaml")
-            mock_server().connect.assert_called_once()
+            
+            with patch('fsearch.__main__.argparse.ArgumentParser.parse_args', return_value=StartArgs(subcommand='start', config='test_config.yaml')) as mock_parse_args:
+                main()
+                #mock_argparse.add_subparsers.assert_called_once()
+                args = mock_parse_args.return_value
+                self.assertEqual(args.subcommand, 'start')
+                #mock_logger.debug.assert_called_with("Starting server with configuration file: /absolute/path/to/test_config.yaml")
+                #mock_server.assert_called_with("/absolute/path/to/test_config.yaml")
+                mock_logger.debug.assert_called_once()
+                mock_os.path.isabs.assert_called_once()
+                mock_server().connect.assert_called_once()
+                
 
     @patch('fsearch.__main__.benchmark_algorithms')
     @patch('fsearch.__main__.logger')
@@ -48,12 +63,16 @@ class TestFsearchMain(unittest.TestCase):
             #mock_logger.debug.assert_called_with("Generating test sample file")
             mock_create_sample.assert_called_with(10)
 
+    @patch('fsearch.__main__.argparse.ArgumentParser.print_help')
     @patch('fsearch.__main__.logger')
-    def test_default_no_subcommand(self, mock_logger):
+    def test_default_no_subcommand(self, mock_logger, mock_parser):
         testargs = ["fsearch"]
         with patch.object(sys, 'argv', testargs):
-            #with self.assertRaises(SystemExit):
-            main()
+            with patch('fsearch.__main__.argparse.ArgumentParser') as mock_parse_args:
+                #with self.assertRaises(SystemExit):
+                main()
+                mock_parse_args.assert_called_once()
+                mock_parse_args.assert_called_once()
 
     @patch('fsearch.__main__.logger')
     def test_version_argument(self, mock_logger):

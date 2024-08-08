@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory, TemporaryFile
 from fsearch.utils import (
     read_config, read_file, compute_lps, generate_certs, 
     generate_samples, plot_benchmarks, print_benchmarks,
-    benchmark_algorithms
+    benchmark_algorithms, create_sample
 )
 from fsearch.config import Config
 
@@ -289,3 +289,30 @@ class TestBenchmarkAlgorithms(unittest.TestCase):
 
         self.assertTrue(mock_print_benchmarks.called_with(sorted_results))
         self.assertTrue(mock_plot_benchmarks.called_with(sorted_results))
+
+class TestUtils(unittest.TestCase):
+
+    @patch('fsearch.utils.generate_random_string')
+    @patch('fsearch.utils.os.path.join', return_value='samples/10k.txt')
+    @patch('fsearch.utils.open', new_callable=mock_open)
+    def test_create_sample(self, mock_file, mock_path_join, mock_generate_random_string):
+        mock_generate_random_string.return_value = 'a' * 10
+        size_mb = 1
+        out_dir = 'samples'
+
+        create_sample(size_mb, out_dir)
+
+        # Check that os.path.join was called with the correct arguments
+        mock_path_join.assert_called_once()
+
+        # Check that the file was opened with the correct name
+        mock_file.assert_called_with('samples/10k.txt', 'w')
+
+        # Get the file handle from the mock_open instance
+        handle = mock_file()
+
+        # Check the content written to the file
+        # Each line is 11 bytes ('a'*10 + '\n')
+        expected_lines = (size_mb * 1024 * 1024) // 11
+        handle.write.assert_called_with('a' * 10 + '\n')
+        self.assertEqual(handle.write.call_count, expected_lines + 1)
