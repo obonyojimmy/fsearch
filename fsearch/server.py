@@ -127,21 +127,24 @@ class Server:
             logger.debug(f'Exiting the server...')
             sys.exit(0)
 
-
     def receive(self):
-        """ Handles incoming connections and starts a new thread for each client. """
+        """ Handles incoming connections and starts a new thread for each client. 
+        Should be called after socket is bound and listening"""
         ## notes:  https://docs.python.org/3/howto/sockets.html for more details on how to handle sockets
+        #print(self.is_running)
+        #return None
         while self.is_running:
             try:
-                client_socket, client_address = self.server_socket.accept()
                 
+                client_socket, client_address = self.server_socket.accept()
+                #print('receive loop')
                 
                 ## read the configs again to check if reread_on_query has changed
                 self.configs = read_config(self.config_path)
                 logger.debug(f"DEBUG: [REREAD_ON_QUERY] = {self.configs.reread_on_query}")
 
                 start_time: float = time.time()
-                
+
                 ## if reread_on_query if true , update the self.config.linux-path and re-load the database
                 if self.configs.reread_on_query:
                     self.configs.linuxpath = self.configs.linuxpath
@@ -153,7 +156,7 @@ class Server:
                 )
                 client_handler.start()
             except ssl.SSLError as e:
-                logger.error(f'SSL ERROR: {e}')
+                logger.error(f'Client SSL ERROR: {e}')
             except Exception as e:
                 logger.debug(f'SERVER CONNECTIONS CLOSED')
 
@@ -178,8 +181,7 @@ class Server:
 
     def stop(self):
         """ Stops the server and closes the socket. """
-        if self.is_running:
-            self.is_running = False
+        self.is_running = False
         try:
             #self.server_socket.close()
             self.server_socket.shutdown(socket.SHUT_RDWR)

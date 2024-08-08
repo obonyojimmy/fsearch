@@ -29,7 +29,7 @@ samples:
 
 test:
 	pytest --fsearch-config config.ini --cov=fsearch -v
-	#pytest tests/test_server.py --fsearch-config config.ini -s
+	#pytest tests/test_server.py --fsearch-config config.ini --cov=fsearch.server -s
 
 perf:
 	#pytest --fsearch-config config.ini --cov=fsearch -v

@@ -10,3 +10,7 @@ def pytest_addoption(parser):
 @pytest.fixture
 def config_file_path(request):
     return request.config.getoption("--fsearch-config")
+
+@pytest.fixture(scope="class")
+def config_file_cls(request):
+    request.cls.config_file = request.config.getoption("--fsearch-config")

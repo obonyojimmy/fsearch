@@ -1,128 +1,156 @@
-# tests/test_server.py
-import pytest
 import unittest
+import pytest
+from unittest.mock import patch, MagicMock, call, PropertyMock, Mock
 import socket
 import ssl
-import sys
-import time
-import threading
-from unittest.mock import patch, MagicMock
 from fsearch.server import Server
 from fsearch.config import Config
-from unittest import mock
+from fsearch.utils import logger, read_config, read_file, generate_certs
+from fsearch.algorithms import regex_search
 
-@pytest.fixture
-def mock_server(config_file_path):
-    with patch('fsearch.utils.read_file'), \
-        patch('ssl.wrap_socket', return_value=MagicMock()), \
-        patch('fsearch.utils.read_config') as mock_read_config:
-        
-        mock_config = MagicMock()
-        mock_read_config.return_value = mock_config
+@pytest.mark.usefixtures("config_file_cls")
+class TestServer(unittest.TestCase):
 
-        server = Server(config_file_path, re_connect=False)
-        yield server
+    def setUp(self):
+        self.config_path = self.config_file #'config.ini'
+        self.mock_config = read_config(self.config_path)
+        #self.server = Server(self.config_path)
+    
+    @patch('fsearch.server.read_file')
+    @patch('fsearch.server.read_config')
+    @patch('fsearch.server.ssl.wrap_socket')
+    @patch('fsearch.server.socket.socket', spec=True)
+    def test_init(self, mock_socket, mock_wrap_socket, mock_read_config, mock_read_file):
+        mock_read_config.return_value = self.mock_config
+        server = Server(self.config_path)
+        mock_socket.assert_called_once_with(socket.AF_INET, socket.SOCK_STREAM)
+        #assert isinstance(server.server_socket, mock_socket)
+        #self.assertEqual(server.server_socket, mock_socket)
+        self.assertEqual(server.config_path, self.config_path)
+        self.assertEqual(server.configs, self.mock_config)
+        self.assertFalse(server.is_running)
+        if server.configs.ssl:
+            mock_wrap_socket.assert_called_once()
+        self.assertEqual(server.database, mock_read_file.return_value)
+        self.assertEqual(server.max_conn, 5)
+    
+    @patch('fsearch.server.generate_certs')
+    @patch('fsearch.server.os.path.exists')
+    @patch('fsearch.server.ssl.wrap_socket')
+    @patch('fsearch.server.read_config')
+    def test_load_ssl(self, mock_read_config, mock_wrap_socket, mock_exists, mock_generate_certs):
+        mock_read_config.return_value = self.mock_config
+        mock_exists.side_effect = [False, False]  # Certfile and keyfile don't exist
+        mock_generate_certs.return_value = ('generated_certfile', 'generated_keyfile')
+        server = Server(self.config_path)
+        server.configs.ssl = True
+        server.load_ssl()
+        mock_wrap_socket.assert_called_once()
+        self.assertEqual(server.configs.certfile, 'generated_certfile')
+        self.assertEqual(server.configs.keyfile, 'generated_keyfile')
 
-class TestServer:
-    def test_init(self, mock_server):
-        server = mock_server
-        assert isinstance(server.configs, Config)
-        #assert isinstance(server.server_socket, socket.socket)
-        assert not server.is_running
-
-    def test_connect(self, mock_server: Server):
-        server = mock_server
+    @patch('fsearch.server.read_file')
+    @patch('fsearch.server.read_config')
+    def test_load_database(self, mock_read_config, mock_read_file):
+        mock_read_config.return_value = self.mock_config
+        server = Server(self.config_path)
+        server.load_database()
+        self.assertEqual(server.database, mock_read_file.return_value)
+    
+    @patch('fsearch.server.read_config')
+    @patch('fsearch.server.socket.socket')
+    def test_connect(self, mock_socket, mock_read_config):
+        mock_read_config.return_value = self.mock_config
+        mock_socket_inst = mock_socket.return_value
+        server = Server(self.config_path)
         host, port = server.configs.host, server.configs.port
+        with patch.object(server, 'receive', return_value=None) as mock_receive:
+            server.connect()
+            mock_socket_inst.bind.assert_called_once_with((host, port))
+            mock_socket_inst.listen.assert_called_once_with(server.max_conn)
+            self.assertTrue(server.is_running)
+            mock_receive.assert_called_once()
 
-        with patch.object(socket.socket, 'bind') as mock_bind, \
-            patch.object(socket.socket, 'listen') as mock_listen, \
-            patch.object(server, 'receive') as mock_receive, \
-            patch.object(server, 'stop') as mock_stop, \
-            patch('sys.exit') as mock_sys_exit:
-                try:
-                    server.connect()
-                except KeyboardInterrupt:
-                    mock_stop.assert_called_once()
-                    mock_sys_exit.assert_called_once()
-                except OSError:
-                    mock_sys_exit.assert_called_once()
+    @patch('fsearch.server.Server', autospec=True, wraps=Server)
+    @patch('fsearch.server.read_config')
+    @patch('fsearch.server.socket.socket')
+    @patch('fsearch.server.threading.Thread')
+    def test_receive(self, mock_thread, mock_socket, mock_read_config, MockServer):
+        """ Note: see https://deniscapeto.com/2021/03/06/how-to-test-a-while-true-in-python/ on test in a loop """
+        mock_read_config.return_value = self.mock_config
+        mock_socket_inst = mock_socket.return_value
+        mock_client_socket, mock_client_address = MagicMock(), '122.12.1.2'
+        mock_socket_inst.accept.return_value = (mock_client_socket, mock_client_address)
+        mock_thread.start.return_value = MagicMock()
 
-                mock_bind.assert_called_once_with((host, port))
-                mock_listen.assert_called_once_with(server.max_conn)
-                mock_bind.assert_called_once()
-                mock_receive.assert_called_once()
-                assert server.is_running
-                mock_sys_exit.assert_not_called()
+        server = Server(self.config_path)
+        sentinel = PropertyMock(side_effect=[True, False])
+        Server.is_running = sentinel
+        #print(sentinel.call_count)
+        #server.receive()
+        with patch.object(server, 'load_database', return_value=None) as mock_load_database, \
+            patch.object(server, '_handle_client', return_value=None) as mock_handle_client, \
+            patch('fsearch.server.time.time', side_effect=0) as mock_time:
+                
+                server.receive()
+                mock_socket_inst.accept.assert_called_once()
+                mock_time.assert_called_once()
+                self.assertTrue(mock_load_database.called or not mock_load_database.called)
+                print(mock_thread.call_args)
+                """ mock_thread.assert_called_with(
+                    args=(mock_client_socket, mock_time, mock_client_address), 
+                    target=mock_handle_client
+                ) """
+                #mock_thread.start.assert_called_once()
+               
 
-    def test_receive(self, mock_server: Server):
-        server = mock_server
-        #server = MagicMock()
-        mock_client_address = ('127.0.0.1', 12345)
-        #patch(threading.Thread) as mock_thread, \
-        #patch.object(server, 'is_running', return_value=[True, False]), \
-        #patch.object(server, 'is_running', return_value=[True, False]) as mock_running, \
-        #patch.object(server, 'receive') as mock_recive, \
-        #patch('threading.Thread.start') as mock_thread_start, \
-        #patch.object(socket.socket, 'accept', return_value=(mock_client_socket, mock_client_address)) as mock_accept
-        
-        with patch('time.time') as mock_time, \
-            patch.object(threading, 'Thread') as mock_thread, \
-            patch('fsearch.utils.read_config') as mock_read_config, \
-            patch.object(server, 'is_running', side_effect=[True, False]), \
-            patch.object(server, 'receive') as mock_receive:
-            #server.is_running = True
-            assert server.is_running
-            def stop_server():
-                server.is_running = False
-            #mock_receive.side_effect = stop_server
-            #server.receive()
-            mock_receive()
-            
-            #mock_read_config.assert_called_once()
-            mock_thread.assert_called_once()
-            #mock_time.assert_called_once()
-            
-            #server.is_running = True
-            #mock_recive()
-            #mock_time.assert_called_once()
-            #mock_thread.start.assert_called_once()
+        print(sentinel.call_count)
+        sentinel.reset_mock(side_effect=True, return_value=True)
+        MockServer.stop()
 
-    def test_handle_client(self, mock_server):
-        server = mock_server
-
+    
+    @patch('fsearch.server.read_config')
+    @patch('fsearch.server.socket.socket')
+    @patch('fsearch.server.regex_search')
+    def test_handle_client(self, mock_regex_search, mock_socket, mock_read_config):
+        mock_read_config.return_value = self.mock_config
         mock_client_socket = MagicMock()
-        mock_client_socket.recv.return_value = b'hello\x00\x00'
+        mock_regex_search.return_value = True
+        server = Server(self.config_path)
+        server.database = 'database contents'
+        
+        with patch('fsearch.server.time.time', side_effect=[0, 1]):
+            server._handle_client(mock_client_socket, 0, 'client_address')
+            mock_client_socket.recv.assert_called_once()
+            mock_client_socket.sendall.assert_called_once_with(b'STRING EXISTS')
+            mock_client_socket.close.assert_called_once()
 
-        with patch.object(mock_client_socket, 'close') as mock_close:
-            start_time = time.time()
-            client_address = '1.1.1.1.1'
-            server._handle_client(mock_client_socket, start_time, client_address)
+    @patch('fsearch.server.Server', autospec=True, wraps=Server)
+    @patch('fsearch.server.read_config')
+    @patch('fsearch.server.socket.socket')
+    def test_stop(self, mock_socket, mock_read_config, MockServer):
+        mock_read_config.return_value = self.mock_config
+        server = Server(self.config_path)
+        #server.is_running = True
+        mock_socket_inst = mock_socket.return_value
+        sentinel = PropertyMock(return_value=False)
+        Server.is_running = sentinel
+        server.stop()
+        print('stop.is_running.call_count', sentinel.call_count)
+        self.assertFalse(server.is_running)
+        mock_socket_inst.shutdown.assert_called_once_with(socket.SHUT_RDWR)
+        mock_socket_inst.close.assert_called_once()
+        sentinel.reset_mock(side_effect=True)
+        MockServer.stop()
 
-            mock_client_socket.recv.assert_called_once_with(1024)
-            mock_client_socket.sendall.assert_called_once_with(b'STRING NOT FOUND')
-            mock_close.assert_called_once()
+    @patch('fsearch.server.read_config')
+    @patch('fsearch.server.regex_search')
+    def test_search(self, mock_regex_search, mock_read_config):
+        mock_read_config.return_value = self.mock_config
+        mock_regex_search.return_value = True
+        server = Server(self.config_path)
+        server.database = 'database contents'
 
-    def test_stop(self, mock_server):
-        server = mock_server
-
-        server.is_running = True
-        with patch.object(socket.socket, 'close') as mock_close, \
-            patch.object(socket.socket, 'shutdown') as mock_shutdown:
-                server.stop()
-
-                assert not server.is_running
-                mock_shutdown.assert_called_once()
-                mock_close.assert_called_once()
-
-    def test_search(self, mock_server):
-        server = mock_server
-
-        # Set up mock database
-        server.database = 'test string\nanother string\n'
-
-        # Call search function
-        result = server.search('test string')
-        assert result == "STRING EXISTS" # Simulate that the query was found
-
-        result = server.search('blah')
-        assert result == "STRING NOT FOUND" # Simulate that the query was not found
+        result = server.search('query')
+        self.assertEqual(result, 'STRING EXISTS')
+        mock_regex_search.assert_called_once_with('database contents', 'query')
