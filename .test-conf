@@ -1,0 +1,6 @@
+[DEFAULT]
+host = 1234
+port = 8080
+linux_path = jimmy
+reread_on_query = False
+

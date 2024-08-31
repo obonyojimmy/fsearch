@@ -1,7 +1,12 @@
-import pytest
 import unittest
+
 from fsearch.algorithms import (
-    native_search, regex_search, rabin_karp_search, kmp_search, aho_corasick_search, AhoCorasick
+    AhoCorasick,
+    aho_corasick_search,
+    kmp_search,
+    native_search,
+    rabin_karp_search,
+    regex_search,
 )
 
 text = "Hello World\nThis is a test\nGoodbye World"
@@ -10,55 +15,61 @@ full_match = "This is a test"
 false_match = "Not in text"
 partial_match = "Not in text"
 
+
 class TestNativeSearch(unittest.TestCase):
     def test_search_match(self):
-        assert native_search(text, full_match) == True
+        self.assertTrue(native_search(text, full_match))
 
     def test_no_match(self):
-        assert native_search(text, false_match) == False
+        self.assertFalse(native_search(text, false_match))
 
     def test_partial_match(self):
-        assert native_search(text, partial_match) == False
+        self.assertFalse(native_search(text, partial_match))
+
 
 class TestRegExSearch(unittest.TestCase):
     def test_search_match(self):
-        assert regex_search(text, full_match) == True
+        self.assertTrue(regex_search(text, full_match))
 
     def test_no_match(self):
-        assert regex_search(text, false_match) == False
+        self.assertFalse(regex_search(text, false_match))
 
     def test_partial_match(self):
-        assert regex_search(text, partial_match) == False
+        self.assertFalse(regex_search(text, partial_match))
+
 
 class TestRabinKarpSearch(unittest.TestCase):
     def test_search_match(self):
-        assert rabin_karp_search(text, full_match) == True
+        self.assertTrue(rabin_karp_search(text, full_match))
 
     def test_no_match(self):
-        assert rabin_karp_search(text, false_match) == False
+        self.assertFalse(rabin_karp_search(text, false_match))
 
     def test_partial_match(self):
-        assert rabin_karp_search(text, partial_match) == False
+        self.assertFalse(rabin_karp_search(text, partial_match))
+
 
 class TestKpmSearch(unittest.TestCase):
     def test_search_match(self):
-        assert kmp_search(text, full_match) == True
+        self.assertTrue(kmp_search(text, full_match))
 
     def test_no_match(self):
-        assert kmp_search(text, false_match) == False
+        self.assertFalse(kmp_search(text, false_match))
 
     def test_partial_match(self):
-        assert kmp_search(text, partial_match) == False
+        self.assertFalse(kmp_search(text, partial_match))
+
 
 class TestAhoCorasickSearch(unittest.TestCase):
     def test_search_match(self):
-        assert aho_corasick_search(text, full_match) == True
+        self.assertTrue(aho_corasick_search(text, full_match))
 
     def test_no_match(self):
-        assert aho_corasick_search(text, false_match) == False
+        self.assertFalse(aho_corasick_search(text, false_match))
 
     def test_partial_match(self):
-        assert aho_corasick_search(text, partial_match) == False
+        self.assertFalse(aho_corasick_search(text, partial_match))
+
 
 class TestAhoCorasick(unittest.TestCase):
     def test_init(self):
@@ -74,7 +85,7 @@ class TestAhoCorasick(unittest.TestCase):
         ac.add_pattern("she")
         ac.add_pattern("his")
         ac.add_pattern("hers")
-        
+
         assert ac.new_state == 9
 
     def test_build_automaton(self):
@@ -84,8 +95,8 @@ class TestAhoCorasick(unittest.TestCase):
         ac.add_pattern("his")
         ac.add_pattern("hers")
         ac.build_automaton()
-        
-        assert ac.output[7] == 'his'
+
+        assert ac.output[7] == "his"
 
     def test_search(self):
         ac = AhoCorasick()
@@ -96,6 +107,4 @@ class TestAhoCorasick(unittest.TestCase):
         ac.build_automaton()
 
         results = ac.search("ushers")
-        assert results == [(2, 'he'), (2, 'hers')]
-
-        
+        assert results == [(2, "he"), (2, "hers")]

@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import re
-from collections import deque, defaultdict
+from collections import defaultdict, deque
+
 from fsearch.utils import compute_lps
+
 
 def native_search(text: str, pattern: str):
     """
@@ -17,11 +19,12 @@ def native_search(text: str, pattern: str):
 
     Returns:
         bool: True if the pattern is found as a full match in the text, otherwise False.
-    """
-    for line in text.split('\n'):
+    """  # noqa: E501
+    for line in text.split("\n"):
         if line == pattern:
             return True
     return False
+
 
 def regex_search(text: str, pattern: str) -> bool:
     """
@@ -34,26 +37,27 @@ def regex_search(text: str, pattern: str) -> bool:
 
     Returns:
     bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
-    """
+    """  # noqa: E501
     # Compile the regex pattern to match the whole line
     regex = re.compile(f"^{re.escape(pattern)}$", re.MULTILINE)
-    
+
     # Search through the text
     matches = regex.search(text)
-    
+
     return matches is not None
+
 
 def rabin_karp_search(text: str, pattern: str):
     """
     Rabin-Karp algorithm to find a full line match of a pattern in the text.
-    
+
     Args:
         - text (str): The content of the file.
         - pattern (str): The search string.
 
     Returns:
         bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
-    """
+    """  # noqa: E501
     if not pattern or not text:
         return False
 
@@ -68,18 +72,18 @@ def rabin_karp_search(text: str, pattern: str):
 
     # Calculate the hash value of the pattern
     for i in range(m):
-        pattern_hash = (prime * pattern_hash + ord(pattern[i]))
+        pattern_hash = prime * pattern_hash + ord(pattern[i])
 
-    lines = text.split('\n')
+    lines = text.split("\n")
     for line in lines:
         n = len(line)
         if n != m:
             continue
-        
+
         # Initialize hash value for current line
         current_hash = 0
         for i in range(m):
-            current_hash = (prime * current_hash + ord(line[i]))
+            current_hash = prime * current_hash + ord(line[i])
 
         # Compare the hash values
         if pattern_hash == current_hash:
@@ -88,6 +92,7 @@ def rabin_karp_search(text: str, pattern: str):
                 return True
 
     return False
+
 
 def kmp_search(text: str, pattern: str) -> bool:
     """
@@ -99,7 +104,8 @@ def kmp_search(text: str, pattern: str) -> bool:
 
     Returns:
         bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
-    """
+    """  # noqa: E501
+
     def kmp_search_line(pattern, line):
         """
         KMP search for a pattern in a single line.
@@ -110,10 +116,10 @@ def kmp_search(text: str, pattern: str) -> bool:
         """
         m = len(pattern)
         n = len(line)
-        
+
         if m != n:
             return False
-        
+
         lps = compute_lps(pattern)
         i = 0  # index for line
         j = 0  # index for pattern
@@ -133,12 +139,13 @@ def kmp_search(text: str, pattern: str) -> bool:
 
         return False
 
-    lines = text.split('\n')
+    lines = text.split("\n")
     for line in lines:
         if kmp_search_line(pattern, line):
             return True
 
     return False
+
 
 def aho_corasick_search(text: str, pattern: str) -> bool:
     """
@@ -150,12 +157,12 @@ def aho_corasick_search(text: str, pattern: str) -> bool:
 
     Returns:
         bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
-    """
+    """  # noqa: E501
     aho = AhoCorasick()
     aho.add_pattern(pattern)
     aho.build_automaton()
 
-    lines = text.split('\n')
+    lines = text.split("\n")
     for line in lines:
         if len(line) == len(pattern):
             matches = aho.search(line)
@@ -165,24 +172,26 @@ def aho_corasick_search(text: str, pattern: str) -> bool:
 
     return False
 
+
 class AhoCorasick:
     """
     Aho-Corasick algorithm for multiple pattern matching.
-    
+
     Methods:
     -------
-        __init__(): 
+        __init__():
             Initializes Aho-Corasick automaton.
-    
-        add_pattern(pattern): 
+
+        add_pattern(pattern):
             Add a pattern to the  automaton.
-    
-        build_automaton(): 
+
+        build_automaton():
             Builds the failure function and finalizes the automaton.
-    
-        search(text): 
+
+        search(text):
             Searches the text using the automaton.
     """
+
     def __init__(self):
         """
         Initializes the Aho-Corasick algorithm.
@@ -208,7 +217,7 @@ class AhoCorasick:
         self.output[state] = pattern
 
     def build_automaton(self):
-        """ Builds the failure function and finalizes the automaton. """
+        """Builds the failure function and finalizes the automaton."""
         queue = deque()
 
         for char in {key[1] for key in self.goto if key[0] == 0}:
@@ -249,7 +258,12 @@ class AhoCorasick:
             if (state, char) in self.goto:
                 state = self.goto[(state, char)]
                 if state in self.output:
-                    results.append((index - len(self.output[state]) + 1, self.output[state]))
+                    results.append(
+                        (
+                            index - len(self.output[state]) + 1,
+                            self.output[state],
+                        )
+                    )
             else:
                 state = 0
         return results

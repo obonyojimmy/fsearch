@@ -1,4 +1,4 @@
-"""This file provides the report html template used for search algorithms benchmarks in fsearch package."""
+"""This file provides the report html template used for search algorithms benchmarks in fsearch package."""  # noqa: E501
 # fsearch/report.py
 
 # benchmark a pdf template
@@ -61,7 +61,7 @@ benchmark_template = """
 """
 
 ## Linux service defination template
-service_template ="""[Unit]
+service_template = """[Unit]
 Description=Fsearch Command-Line Search Service
 After=network.target
 

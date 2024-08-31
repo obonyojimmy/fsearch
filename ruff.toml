@@ -1,0 +1,66 @@
+
+# Exclude any directories (optional)
+exclude = [
+     ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+indent-width = 4
+target-version = "py39"
+line-length = 79 # Set maximum line length (PEP 8 suggests 79 characters)
+
+[lint]
+# Enable all PEP 8 rules
+select = ["E"]
+# Enforce blank lines before class/function definitions
+extend-select = [
+    "E2",  # whitespace around operators
+    "E3",  # blank lines
+    "E4",  # import order
+    "E5",  # line length
+    "E7",  # statement with no effect
+    "E9",  # syntax errors
+]
+# Ignore any specific rules (optional, if you need exceptions)
+ignore = []
+fixable = ["ALL"]
+unfixable = []
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.isort]
+# Use a single line after each import block.
+lines-after-imports = 0
+lines-between-types = 0
+
+[format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = true
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"

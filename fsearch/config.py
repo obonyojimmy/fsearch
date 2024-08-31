@@ -2,17 +2,20 @@
 # fsearch/config.py
 
 from dataclasses import dataclass, field, fields
+from typing import Optional
+
 
 @dataclass
 class Config:
-    """ The base server configuration object """
-    host: str = '0.0.0.0'
+    """The base server configuration object"""
+
+    host: str = "0.0.0.0"
     port: int = 8080
-    ssl: bool = True
-    certfile: str = 'server.crt'
-    keyfile: str = 'server.key'
-    log_level: str = 'INFO'
-    linuxpath: str = 'samples/200k.txt'
+    ssl: bool = False
+    certfile: str = "server.crt"
+    keyfile: str = "server.key"
+    log_level: str = "INFO"
+    linuxpath: str = "samples/200k.txt"
     reread_on_query: bool = False
     extra: dict = field(default_factory=dict)
 
@@ -22,12 +25,12 @@ class Config:
             key = f.name.lower()
             if key in kwargs:
                 val: str = kwargs.pop(key)
-                if f.type.__name__ == 'bool' and not isinstance(val, bool):
-                    val = val.lower() in ("yes", "true", "on" "1")
-                
-                if f.type.__name__ == 'int' and not isinstance(val, int):
-                    val = int(val)
-                
+                if f.type == "bool" and not isinstance(val, bool):  # type: ignore
+                    val = val.lower() in ("yes", "true", "on" "1")  # type: ignore
+
+                if f.type == "int" and not isinstance(val, int):  # type: ignore
+                    val = int(val)  # type: ignore
+
                 setattr(self, key, val)
             else:
                 setattr(self, key, f.default)

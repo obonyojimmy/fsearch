@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fsearch"
+version = "0.1.0"
+description = "A highly performant and secure command-line server to search text files for strings."
+readme = "README.md"
+authors = [
+    { name = "Jimmycliff Obonyo", email = "cliffjimmy27@gmail.com" },
+]
+license = { text = "MIT license" }
+requires-python = ">=3.9"
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.7",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "pytest",
+    "pytest-cov",
+    "matplotlib", 
+    "weasyprint"
+]
+
+[project.scripts]
+fsearch = "fsearch.__main__:main"
+"fsearch.service" = "fsearch.service:main"
+"fsearch.client" = "fsearch.client:main"
+"fsearch.benchmark" = "fsearch.benchmark:main"

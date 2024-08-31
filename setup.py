@@ -1,13 +1,8 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Read the contents of the README file
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
-
-# Read the dependencies from requirements.txt
-with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = fh.readlines()
-    requirements = [req.strip() for req in requirements if req.strip()]
 
 setup(
     name="fsearch",
@@ -27,17 +22,18 @@ setup(
         "Operating System :: POSIX",
         "Topic :: Software Development",
     ],
-    license='MIT license',
-    python_requires='>=3.7',
-    install_requires=requirements,
+    license="MIT license",
+    python_requires=">=3.9",
     extras_require={
-        'benchmark': ['matplotlib', 'weasyprint'],
-        'tests': ['pytest>=6.4.4', 'pytest-cov==4.1.0'],
+        "benchmark": ["matplotlib", "weasyprint"],
+        "tests": ["pytest>=6.4.4", "pytest-cov==4.1.0"],
     },
     entry_points={
-        'console_scripts': [
-            'fsearch=fsearch.__main__:main',
-            'fsearch.service=fsearch.service:main',
-        ],
+        "console_scripts": [
+            "fsearch=fsearch.__main__:main",
+            "fsearch.service=fsearch.service:main",
+            "fsearch.client=fsearch.client:main",
+            "fsearch.benchmark=fsearch.benchmark:main",
+        ]
     },
 )

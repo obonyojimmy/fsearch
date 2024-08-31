@@ -115,6 +115,8 @@ optional arguments:
 
 Example: `python client.py -p 8080 -c .certs/server.crt -k .certs/server.key '11;0;23;11;0;19;5;0;'`
 
+2. We have included a utility command to generate certs, run `fsearch certs -d <dir>` , this will generate **server.crt** and **server.key** files in the `<dir>` folder , which can be passed to respective SSL args when running server or client.
+
 ## Testing
 
 1. Ensure you have installed the required test dependencies. Run `pip install fsearch[test]` or `pip install pytest pytest-cov` to install them.
@@ -139,7 +141,7 @@ Aho-Corasick Search 0.057100       0.076279       0.066689
 -----------------------------------------------------------------
 ```
 
-To run the benchmarks:
+To run the search algorithms benchmarks:
 
 1. Please ensure that required benchmark utility libraries  **_(matplotlib weasyprint)_** are installed , if not please install them by running:
 `pip install matplotlib weasyprint`
@@ -159,6 +161,13 @@ optional arguments:
 
 Example: `fsearch benchmark -r reports/benchmark.pdf -d samples/ -n 1` will run benchmarks using files in the `samples/` directory as the sampling samples, and create a pdf report at path `reports/benchmark.pdf`
 
+To run performance speed test benchmark , please run the `perf.py` file, example :
+
+```bash
+python perf.py
+```
+This will create test sample databse path and print a bechmark report table in the terminal on completion, please note this may take some minutes to complete.
+
 ## Limitations
 
 - It reads a maximum of 250,000 lines of the database file (`linuxpath`).
@@ -168,19 +177,22 @@ Example: `fsearch benchmark -r reports/benchmark.pdf -d samples/ -n 1` will run 
 ## Code Quality
 
 ```plaintext
----------- coverage: platform linux, python 3.7.12-final-0 -----------
+---------- coverage: platform linux, python 3.9.19-final-0 -----------
 Name                    Stmts   Miss  Cover
 -------------------------------------------
 fsearch/__init__.py         2      0   100%
-fsearch/__main__.py        62     62     0%
+fsearch/__main__.py        76      6    92%
 fsearch/algorithms.py     115      3    97%
-fsearch/config.py          20      2    90%
-fsearch/server.py          81     19    77%
-fsearch/service.py         31     31     0%
+fsearch/config.py          25      2    92%
+fsearch/server.py          98     20    80%
+fsearch/service.py         31      2    94%
 fsearch/templates.py        2      0   100%
-fsearch/utils.py          143     16    89%
+fsearch/utils.py          168     21    88%
 -------------------------------------------
-TOTAL                     456    133    71%
+TOTAL                     517     54    90%
+
+
+============================ 59 passed in 10.44s ========================
 ```
 
 ## License

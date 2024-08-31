@@ -6,25 +6,25 @@ import configparser
 import logging
 import os
 import random
-import subprocess
 import string
+import subprocess
 import timeit
 from io import BytesIO
-from typing import Tuple, Dict, List
+from typing import Dict, List, Tuple
+
 from fsearch.config import Config
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s : [%(levelname)s] - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
+    format="%(asctime)s : [%(levelname)s] - %(message)s",
+    handlers=[logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)
 
+
 def read_config(config_path: str) -> Config:
-    """ Reads server configurations from file to a `Config` object
+    """Reads server configurations from file to a `Config` object
 
     Args:
       - filepath (str): The path to the file to read.
@@ -50,7 +50,7 @@ def read_config(config_path: str) -> Config:
         for k, v in config_parser.items(section):
             if k not in defaults:
                 defaults[k] = v
-    
+
     config = Config(**defaults)
 
     # Check if the config option linuxpath, path is relative
@@ -58,6 +58,7 @@ def read_config(config_path: str) -> Config:
         config.linuxpath = os.path.abspath(config.linuxpath)
 
     return config
+
 
 def read_file(filepath: str, max_lines: int = 250000) -> str:
     """
@@ -72,28 +73,28 @@ def read_file(filepath: str, max_lines: int = 250000) -> str:
 
     Raises:
       FileNotFoundError: If the provided filepath does not exists.
-    """
+    """  # noqa: E501
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"The file '{filepath}' does not exist.")
 
     lines = []
 
     try:
-        with open(filepath, 'r') as file:
+        with open(filepath, "r") as file:
             for i in range(max_lines):
                 line = file.readline()
-                if not line:
-                    break
-                lines.append(line)
+                if line:
+                    lines.append(line)
     except Exception as e:
-        return None
-    
-    return '\n'.join(lines)
+        return ""
+
+    return "\n".join(lines)
+
 
 def compute_lps(pattern: str) -> List[int]:
     """
     Compute the longest prefix suffix (LPS) array for the pattern.
-    
+
     The LPS array is used to skip characters while matching.
 
     Parameters:
@@ -121,7 +122,8 @@ def compute_lps(pattern: str) -> List[int]:
 
     return lps
 
-def generate_certs(cert_dir: str = './.certs') -> Tuple[str, str]:
+
+def generate_certs(cert_dir: str = "./.certs") -> Tuple[str, str]:
     """Generates self-signed certificates if missing using openssl or return existing certs in the certs directory.
 
     Args:
@@ -129,47 +131,85 @@ def generate_certs(cert_dir: str = './.certs') -> Tuple[str, str]:
 
     Returns:
         tuple[str, str]: Absolute paths to generated certfile and keyfile.
-    """
+    """  # noqa: E501
     certfile = os.path.join(cert_dir, "server.crt")
     keyfile = os.path.join(cert_dir, "server.key")
 
     # Return previous generated certs if exists
     if os.path.exists(certfile) and os.path.exists(keyfile):
-        return certfile, keyfile 
+        return certfile, keyfile
 
     os.makedirs(cert_dir, exist_ok=True)
 
     # Generate the self-signed certificate using openssl bash cmd
-    subprocess.check_call([
-        "openssl", "req", "-x509", "-nodes", "-days", "365",
-        "-newkey", "rsa:2048", "-keyout", keyfile, "-out", certfile,
-        "-subj", "/C=US/ST=California/L=San Francisco/O=My Company/OU=Org/CN=mydomain.com"
-    ])
+    subprocess.check_call(
+        [
+            "openssl",
+            "req",
+            "-x509",
+            "-nodes",
+            "-days",
+            "365",
+            "-newkey",
+            "rsa:2048",
+            "-keyout",
+            keyfile,
+            "-out",
+            certfile,
+            "-subj",
+            "/C=US/ST=California/L=San Francisco/O=My Company/OU=Org/CN=mydomain.com",  # noqa: E501
+        ]
+    )
 
     return certfile, keyfile
 
-def generate_random_string(chars):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=chars))
-    
-def create_sample(size_mb: int, out_dir: str = 'samples'):
+
+def generate_random_string(chars: int) -> str:
+    """genrate a random string of chars length
+
+    Args:
+        chars  (int) length of the string
+    Returns:
+        str: The random string
+    """
+    return "".join(
+        random.choices(string.ascii_letters + string.digits, k=chars)
+    )
+
+
+def create_sample(size_mb: float, out_dir: str = "samples") -> str:
+    """
+    Create a sample text file of a specified size in megabytes.
+
+    Args:
+        size_mb (int): The size of the file to create in megabytes.
+        out_dir (str, optional): The directory to save the file in. Defaults to "samples".
+
+    Returns:
+        str: The path to the created file.
+    """  # noqa: E501
     # Calculate the target size in bytes
     target_size_bytes = size_mb * 1024 * 1024
     line_length = 10
-    line_with_newline_length = line_length + 1  # Each line is 10 chars + 1 newline character
+    line_with_newline_length = (
+        line_length + 1
+    )  # Each line is 10 chars + 1 newline character
     num_lines = target_size_bytes // line_with_newline_length
 
-    # Calculate the number of lines in thousands, rounded down to the nearest thousand
-    k_lines =  round(num_lines / 1000)
+    # Calculate the number of lines in thousands, rounded down to the nearest thousand  # noqa: E501
+    k_lines = round(num_lines / 1000)
 
     file_name = f"{k_lines}k.txt"
     file_path = os.path.join(out_dir, file_name)
-    
-    with open(file_path, 'w') as new_file:
+
+    with open(file_path, "w") as new_file:
         bytes_written = 0
         while bytes_written < target_size_bytes:
             random_string = generate_random_string(line_length)
-            new_file.write(random_string + '\n')
+            new_file.write(random_string + "\n")
             bytes_written += line_with_newline_length
+
+    return file_path
 
 
 def generate_samples(file_path: str, size: int = 10) -> List[str]:
@@ -183,14 +223,18 @@ def generate_samples(file_path: str, size: int = 10) -> List[str]:
     Returns:
     list: A list of sampled lines.
     """
-    lines = read_file(file_path).split("\n")
+    lines = read_file(file_path).splitlines()
     total = len(lines)
 
     if size > total:
         size = total
-    
-    sampled_lines = random.sample(lines, size)
-    return sampled_lines
+
+    return random.sample(lines, k=size)
+    # sampled_lines = [n for n in random.sample(lines, k=size) if n]
+    # if len(sampled_lines) == 0:
+    #    sampled_lines = generate_samples(file_path, size)
+    # return sampled_lines
+
 
 def plot_benchmarks(results: Dict[str, Dict[str, float]]) -> BytesIO:
     """
@@ -202,13 +246,15 @@ def plot_benchmarks(results: Dict[str, Dict[str, float]]) -> BytesIO:
 
     Returns:
         BytesIO: The BytesIO object containing the plot image.
-    """
+    """  # noqa: E501
     try:
         import matplotlib.pyplot as plt
     except ImportError:
-        logger.error('please install matplotlib. Run `pip install fsearch[benchmark]` or `pip install matplotlib')
+        logger.error(
+            "please install matplotlib. Run `pip install fsearch[benchmark]` or `pip install matplotlib"  # noqa: E501
+        )
         raise ImportError
-    
+
     algorithms = list(results.keys())
     file_sizes = list(results[algorithms[0]].keys())
 
@@ -220,27 +266,29 @@ def plot_benchmarks(results: Dict[str, Dict[str, float]]) -> BytesIO:
         times = [results[algorithm][file_size] for file_size in file_sizes]
         ax.bar([pos + i * width for pos in x], times, width, label=algorithm)
 
-    ax.set_xlabel('File Size')
-    ax.set_ylabel('Time (seconds)')
-    ax.set_title('Benchmark of Search Algorithms')
+    ax.set_xlabel("File Size")
+    ax.set_ylabel("Time (seconds)")
+    ax.set_title("Benchmark of Search Algorithms")
     ax.set_xticks([pos + width * (len(algorithms) / 2) for pos in x])
     ax.set_xticklabels(file_sizes)
     ax.legend()
 
     buffer = BytesIO()
     plt.tight_layout()
-    plt.savefig(buffer, format='png')
+    plt.savefig(buffer, format="png")
     buffer.seek(0)
     plt.close()
 
     return buffer
+
 
 def print_benchmarks(results: Dict[str, Dict[str, float]]) -> str:
     """
     Pretty prints the benchmark results as a table.
 
     Args:
-        results (dict[str, dict[str, float]]): A dictionary with algorithm names as keys and dictionaries of file sizes and times as values.
+        results (dict[str, dict[str, float]]): A dictionary with algorithm \
+            names as keys and dictionaries of file sizes and times as values.
 
     Returns:
     str: The table string representation of the results.
@@ -248,20 +296,27 @@ def print_benchmarks(results: Dict[str, Dict[str, float]]) -> str:
     file_sizes = list(next(iter(results.values())).keys())
     headers = ["Algorithm"] + file_sizes + ["Average"]
     row_format = "{:<20}" + "{:<15}" * (len(headers) - 1)
-    
+
     table_str = row_format.format(*headers) + "\n"
     table_str += "-" * 20 + "-" * 15 * (len(headers) - 1) + "\n"
 
     for algorithm, times in results.items():
         avg_time = sum(times.values()) / len(times)
-        row = [algorithm] + [f"{times[file_size]:.6f}" for file_size in file_sizes] + [f"{avg_time:.6f}"]
+        row = (
+            [algorithm]
+            + [f"{times[file_size]:.6f}" for file_size in file_sizes]
+            + [f"{avg_time:.6f} (ms)"]
+        )
         table_str += row_format.format(*row) + "\n"
 
     table_str += "-" * 20 + "-" * 15 * (len(headers) - 1) + "\n"
     print(table_str)
     return table_str
 
-def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: int = 1):
+
+def benchmark_algorithms(
+    file_paths: List[str], report_path: str, sample_size: int = 1
+):
     """
     Benchmarks the different search algorithms using the content of the specified files and patterns
     sampled from the files, then creates a PDF report with the plotted benchmark results using WeasyPrint.
@@ -273,56 +328,89 @@ def benchmark_algorithms(file_paths: List[str], report_path: str, sample_size: i
 
     Returns:
         None
-    """
+    """  # noqa: E501
     try:
         # ensure the required extra dependencies are installed
-        import matplotlib, weasyprint  # type: ignore
+        import matplotlib  # type: ignore
+        import weasyprint
     except ImportError:
-        logger.debug('Please install matplotlib and weasyprint dependencies. Run `pip install fsearch[benchmark]` or `pip install matplotlib weasyprint` to install them')
+        logger.debug(
+            "Please install matplotlib and weasyprint dependencies. \
+            Run `pip install fsearch[benchmark]` \
+            or `pip install matplotlib weasyprint` to install them"
+        )
         return
-    
+
     # internal package imports
-    from fsearch.algorithms import native_search, regex_search, rabin_karp_search, kmp_search, aho_corasick_search
+    from fsearch.algorithms import (
+        aho_corasick_search,
+        kmp_search,
+        native_search,
+        rabin_karp_search,
+        regex_search,
+    )
     from fsearch.templates import benchmark_template
 
     algorithms = {
-        'Native Search': native_search,
-        'Rabin-Karp Search': rabin_karp_search,
-        'KMP Search': kmp_search,
-        'Aho-Corasick Search': aho_corasick_search,
-        'Regex Search': regex_search
+        "Native Search": native_search,
+        "Rabin-Karp Search": rabin_karp_search,
+        "KMP Search": kmp_search,
+        "Aho-Corasick Search": aho_corasick_search,
+        "Regex Search": regex_search,
     }
-    
+
     results = {algorithm: {} for algorithm in algorithms.keys()}
 
     for file_path in file_paths:
         try:
             text = read_file(file_path)
-            file_size_label = sum(1 for i in open(file_path, 'rb'))
+            file_size_label = sum(1 for i in open(file_path, "rb"))
             patterns = generate_samples(file_path, sample_size)
             for pattern in patterns:
                 for name, algorithm in algorithms.items():
                     timer = timeit.Timer(lambda: algorithm(text, pattern))
-                    time_taken = timer.timeit(number=1)  # Run the algorithm 1 time and get the time
+                    time_taken = timer.timeit(
+                        number=1
+                    )  # Run the algorithm 1 time and get the time
+                    time_taken = time_taken * 1000
                     if file_size_label not in results[name]:
                         results[name][file_size_label] = []
                     results[name][file_size_label].append(time_taken)
-        
+
         except FileNotFoundError:
             logger.error(f"File at path {file_path} not found.")
         except Exception as e:
             logger.error(f"An error occurred with file {file_path}: {e}")
 
-    avg_results = {algorithm: {file_size: (sum(times) / len(times)) if len(times) > 0 else 0 for file_size, times in result.items()} for algorithm, result in results.items()}
-    sorted_results = dict(sorted(avg_results.items(), key=lambda item: (sum(item[1].values()) / len(item[1].values())) if len(item[1].values()) > 0 else float('inf')))
+    avg_results = {
+        algorithm: {
+            file_size: (sum(times) / len(times)) if len(times) > 0 else 0
+            for file_size, times in result.items()
+        }
+        for algorithm, result in results.items()
+    }
+    sorted_results = dict(
+        sorted(
+            avg_results.items(),
+            key=lambda item: (sum(item[1].values()) / len(item[1].values()))
+            if len(item[1].values()) > 0
+            else float("inf"),
+        )
+    )
 
     # Pretty print the results
     table_str = print_benchmarks(sorted_results)
 
     # Plot the results
     plot_img = plot_benchmarks(sorted_results)
-    img_str = base64.b64encode(plot_img.read()).decode('utf-8')
-    
-    report_template = benchmark_template.format(table_str=table_str, plot_img=img_str)
+    img_str = base64.b64encode(plot_img.read()).decode("utf-8")
+
+    report_template = benchmark_template.format(
+        table_str=table_str, plot_img=img_str
+    )
+    logger.setLevel(logging.ERROR)
+    logging.getLogger("fontTools").setLevel(logging.ERROR)
+    logging.getLogger("weasyprint").setLevel(logging.ERROR)
     weasyprint.HTML(string=report_template).write_pdf(report_path)
+    logger.setLevel(logging.DEBUG)
     logger.debug(f"Benchmark report saved to {report_path}")
