@@ -1,5 +1,16 @@
-"""This module provides the client to fsearch."""
-# client.py
+"""
+client.py
+
+This module provides the client for the fsearch package.
+
+Classes:
+    - ClientArgs: Represents command-line arguments for the client.
+    - Client: Handles client operations including connecting to the server,
+      sending messages, and managing SSL connections.
+
+Functions:
+    - main: Entry point for the client, handling argument parsing and client execution.
+"""  # noqa: E501
 
 import argparse
 import os
@@ -10,6 +21,22 @@ from typing import Optional
 
 
 class ClientArgs(argparse.Namespace):
+    """Represents command-line arguments for the client.
+
+    Attributes
+    ----------
+    host : str
+        The server's hostname or IP address.
+    port : int
+        The port on which the server is listening.
+    cert : Optional[str]
+        Path to the SSL certificate file.
+    key : Optional[str]
+        Path to the SSL key file.
+    query : str
+        The string to search for on the server.
+    """
+
     host: str
     port: int
     cert: Optional[str]
@@ -23,20 +50,28 @@ class Client:
 
     Attributes
     ----------
-    configs : Config
-        Configuration settings for the client.
+    host : str
+        The server's hostname or IP address.
+    port : int
+        The port on which the server is listening.
+    certfile : Optional[str]
+        Path to the SSL certificate file.
+    keyfile : Optional[str]
+        Path to the SSL key file.
     client_socket : socket.socket
-        The client socket.
+        The client socket for communication with the server.
 
     Methods
     -------
-    __init__(config_path: str):
+    __init__(host: str, port: int, certfile: Optional[str] = None, keyfile: Optional[str] = None):
         Initializes the client with configurations and creates a socket.
+    load_ssl():
+        Secures the client socket with SSL using the provided certificate and key files.
     connect():
         Connects the client to the server.
     send_message(message: str) -> str:
         Sends a message to the server and returns the response.
-    """
+    """  # noqa: E501
 
     host: str
     port: int
@@ -54,11 +89,23 @@ class Client:
         """
         Initializes the client with configurations and creates a socket.
 
-        Args
+        Parameters
         ----------
-        port (int): The server port
-        certfile (str): The server ssl cert path
+        host : str
+            The server's hostname or IP address.
+        port : int
+            The port on which the server is listening.
+        certfile : Optional[str], optional
+            Path to the SSL certificate file, by default None.
+        keyfile : Optional[str], optional
+            Path to the SSL key file, by default None.
+
+        Raises
+        ------
+        Exception
+            If the SSL certificate or key file paths do not exist.
         """
+
         self.host = host
         self.port = port
         if certfile and not os.path.exists(certfile):
@@ -69,7 +116,12 @@ class Client:
         self.keyfile = keyfile
 
     def load_ssl(self):
-        """Secures server socket with self-signed SSL certs if certfile or keyfile do not exist."""  # noqa: E501
+        """
+        Secures the client socket with SSL using the provided certificate and key files.
+
+        This method wraps the client socket with SSL to enable secure communication
+        with the server. If the SSL handshake fails, the process exits with an error.
+        """  # noqa: E501
         certfile, keyfile = self.certfile, self.keyfile
 
         try:
@@ -86,7 +138,10 @@ class Client:
     def connect(self):
         """
         Connects the client to the server.
-        """
+
+        This method attempts to establish a connection to the server using the
+        specified host and port. If the connection fails, the process exits with an error.
+        """  # noqa: E501
         try:
             host, port = self.host, self.port
             self.client_socket.connect((host, port))
@@ -99,15 +154,13 @@ class Client:
         """
         Sends a message to the server and returns the response.
 
-        Args
-        ----------
-        message : str
-            The message to send to the server.
+        Parameters:
+            message : str
+                The message to send to the server.
 
-        Returns
-        -------
-        str
-            The response from the server.
+        Returns:
+            str
+                The response from the server.
         """
 
         with socket.socket(
@@ -129,7 +182,13 @@ class Client:
 
 
 def main():
-    """client entypoint"""
+    """
+    Entry point for the fsearch client.
+
+    This function parses command-line arguments and creates a Client instance
+    to send a search query to the server. The server's response is then printed
+    to the console.
+    """
     parser = argparse.ArgumentParser(description="fsearch client")
 
     parser.add_argument(

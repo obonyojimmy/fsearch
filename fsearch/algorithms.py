@@ -1,24 +1,75 @@
-"""This module provides the search algorithms functions for fsearch package."""
-# fsearch/algorithms.py
+"""
+fsearch/algorithms.py
+
+This module contains various string search algorithms implemented in Python. Each algorithm searches for
+an exact match of a given pattern within a provided text. The module includes the following search functions:
+
+- `native_search`: Performs a naive search for a pattern in the text.
+- `regex_search`: Uses regular expressions to find a full line match of the pattern.
+- `rabin_karp_search`: Implements the Rabin-Karp algorithm for searching a full line match.
+- `kmp_search`: Applies the Knuth-Morris-Pratt (KMP) algorithm to find a full line match.
+- `aho_corasick_search`: Applies the Aho-Corasick algorithm algorithm to find a full line match.
+
+The functions provided are designed to work with multi-line text and search for patterns that match entire lines.
+
+Functions:
+- native_search(text: str, pattern: str) -> bool
+- regex_search(text: str, pattern: str) -> bool
+- rabin_karp_search(text: str, pattern: str) -> bool
+- kmp_search(text: str, pattern: str) -> bool
+- aho_corasick_search(text: str, pattern: str) -> bool
+
+Example usage:
+
+    >>> text = "Hello world\\nThis is a test\\nAnother line"
+    >>> pattern = "This is a test"
+    >>> native_search(text, pattern)
+    True
+
+    >>> regex_search(text, pattern)
+    True
+
+    >>> rabin_karp_search(text, pattern)
+    True
+
+    >>> kmp_search(text, pattern)
+    True
+
+    >>> aho_corasick_search(text, pattern)
+    True
+"""  # noqa: E501
 
 from __future__ import annotations
 
 import re
-from collections import defaultdict, deque
+from collections import deque
 
 from fsearch.utils import compute_lps
 
 
 def native_search(text: str, pattern: str):
     """
-    Searches for an exact match of the pattern in the text using naive search algorithm.
+    Search for an exact match of the pattern in the provided text using a naive search algorithm.
+
+    This function splits the input `text` into individual lines and checks each line for an exact match
+    with the `pattern`. If an exact match is found, the function returns `True`; otherwise, it returns `False`.
 
     Args:
-        - text (str): The content of the file.
-        - pattern (str): The search string.
+        text (str): The text in which to search for the pattern. This text may contain multiple lines.
+        pattern (str): The exact pattern to search for within the text.
 
     Returns:
-        bool: True if the pattern is found as a full match in the text, otherwise False.
+        bool: `True` if the pattern is found as an exact match in any line of the text; `False` otherwise.
+
+    Example:
+        >>> text = "Hello world\\nThis is a test\\nAnother line"
+        >>> pattern = "This is a test"
+        >>> native_search(text, pattern)
+        True
+
+        >>> pattern = "Not in text"
+        >>> native_search(text, pattern)
+        False
     """  # noqa: E501
     for line in text.split("\n"):
         if line == pattern:
@@ -28,15 +79,27 @@ def native_search(text: str, pattern: str):
 
 def regex_search(text: str, pattern: str) -> bool:
     """
-    Searches for an exact match of the pattern in the text using regular expressions,
-    ensuring that the pattern matches an entire line.
+    Search for an exact match of the pattern in the provided text using regular expressions.
 
-    Parameters:
-    text (str): The content of the file.
-    pattern (str): The search string.
+    This function uses regular expressions to find an exact match of the `pattern` in the `text`.
+    It ensures that the pattern matches an entire line within the text.
+
+    Args:
+        text (str): The text in which to search for the pattern. This text may contain multiple lines.
+        pattern (str): The exact pattern string to search for within the text.
 
     Returns:
-    bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
+        bool: `True` if the pattern is found as an exact match on any line in the text; `False` otherwise.
+
+    Example:
+        >>> text = "Hello world\\nThis is a test\\nAnother line"
+        >>> pattern = "This is a test"
+        >>> regex_search(text, pattern)
+        True
+
+        >>> pattern = "Not in text"
+        >>> regex_search(text, pattern)
+        False
     """  # noqa: E501
     # Compile the regex pattern to match the whole line
     regex = re.compile(f"^{re.escape(pattern)}$", re.MULTILINE)
@@ -49,14 +112,29 @@ def regex_search(text: str, pattern: str) -> bool:
 
 def rabin_karp_search(text: str, pattern: str):
     """
-    Rabin-Karp algorithm to find a full line match of a pattern in the text.
+    Search for a full line match of a pattern in the provided text using the Rabin-Karp algorithm.
+
+    This function implements the Rabin-Karp algorithm to find an exact line-by-line match of the
+    `pattern` in the `text`. It calculates hash values for the `pattern` and compares them with
+    the hash values of each line in the text to detect potential matches. If the hash values match,
+    the function performs a direct comparison to ensure there are no hash collisions.
 
     Args:
-        - text (str): The content of the file.
-        - pattern (str): The search string.
+        text (str): The text in which to search for the pattern. This text may contain multiple lines.
+        pattern (str): The exact pattern to search for within the text.
 
     Returns:
-        bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
+        bool: `True` if the pattern is found as an exact match on any line in the text; `False` otherwise.
+
+    Example:
+        >>> text = "Hello world\\nThis is a test\\nAnother line"
+        >>> pattern = "This is a test"
+        >>> rabin_karp_search(text, pattern)
+        True
+
+        >>> pattern = "Not in text"
+        >>> rabin_karp_search(text, pattern)
+        False
     """  # noqa: E501
     if not pattern or not text:
         return False
@@ -96,24 +174,41 @@ def rabin_karp_search(text: str, pattern: str):
 
 def kmp_search(text: str, pattern: str) -> bool:
     """
-    KMP algorithm to find a full line match of a pattern in the text.
+    Search for a full line match of a pattern in the provided text using the Knuth-Morris-Pratt (KMP) algorithm.
+
+    This function implements the KMP algorithm to efficiently find an exact line-by-line match of the
+    `pattern` in the `text`. The KMP algorithm preprocesses the pattern to create a longest prefix suffix (LPS)
+    array that is used to skip unnecessary comparisons during the search process.
 
     Args:
-        - text (str): The content of the file.
-        - pattern (str): The search string.
+        text (str): The content of the text to search. This may contain multiple lines.
+        pattern (str): The search string to find within the text.
 
     Returns:
-        bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
+        bool: `True` if the pattern is found as a full match on a stand-alone line, otherwise `False`.
+
+    Example:
+        >>> text = "Hello world\\nThis is a test\\nAnother line"
+        >>> pattern = "This is a test"
+        >>> kmp_search(text, pattern)
+        True
+
+        >>> pattern = "Not in text"
+        >>> kmp_search(text, pattern)
+        False
     """  # noqa: E501
 
-    def kmp_search_line(pattern, line):
+    def kmp_search_line(pattern: str, line: str) -> bool:
         """
-        KMP search for a pattern in a single line.
+        Perform KMP search for a pattern in a single line.
 
-        :param pattern: The pattern string.
-        :param line: The line of text.
-        :return: True if the pattern matches the full line, otherwise False.
-        """
+        Args:
+            pattern (str): The pattern string to search for.
+            line (str): The line of text in which to search.
+
+        Returns:
+            bool: `True` if the pattern matches the full line, otherwise `False`.
+        """  # noqa: E501
         m = len(pattern)
         n = len(line)
 
@@ -121,8 +216,8 @@ def kmp_search(text: str, pattern: str) -> bool:
             return False
 
         lps = compute_lps(pattern)
-        i = 0  # index for line
-        j = 0  # index for pattern
+        i = 0  # Index for line
+        j = 0  # Index for pattern
 
         while i < n:
             if pattern[j] == line[i]:
@@ -152,8 +247,8 @@ def aho_corasick_search(text: str, pattern: str) -> bool:
     Aho-Corasick algorithm to find a full line match of a pattern in the text.
 
     Args:
-        - text (str): The content of the file.
-        - pattern (str): The search string.
+        text (str): The content of the file.
+        pattern (str): The search string.
 
     Returns:
         bool: True if the pattern is found as a full match on a stand-alone line, otherwise False.
@@ -206,7 +301,7 @@ class AhoCorasick:
         Add a pattern to the  automaton.
 
         Args:
-            - pattern (str): The pattern to add.
+            pattern (str): The pattern to add.
         """
         state = 0
         for char in pattern:
@@ -244,8 +339,8 @@ class AhoCorasick:
         """
         Searches the text using the automaton.
 
-        Parameters:
-            - text (str): The text to search through.
+        Args:
+            text (str): The text to search through.
 
         Returns:
             list: returns a list of matched results.

@@ -1,6 +1,21 @@
-"""This module provides the server class implementation for fsearch package."""
+"""
+fsearch/server.py
 
-# fsearch/server.py
+This module provides the `Server` class implementation for the `fsearch` package. The `Server` class
+is responsible for initializing, securing, and managing the server, as well as handling client
+connections and processing search queries using a multithreaded approach.
+
+Classes:
+    - Server: A class that encapsulates the server's configuration, database loading, connection handling,
+      and search functionalities.
+
+Example usage:
+    >>> from fsearch.server import Server
+    >>> server = Server(config_path="config.ini")
+    >>> server.connect()
+"""  # noqa: E501
+
+import logging
 import os
 import socket
 import ssl
@@ -12,70 +27,102 @@ from typing import Optional
 
 from fsearch.algorithms import regex_search
 from fsearch.config import Config
-from fsearch.utils import generate_certs, logger, read_config, read_file
+from fsearch.utils import generate_certs, read_config, read_file
+
+logger = logging.getLogger(__name__)
 
 
 class Server:
     """
-    The Server class. Starts a server from config , reads linux-path config as its database
-    and handles query search connections.
+    The Server class encapsulates the server's configuration, database, and socket handling.
+    It provides methods to start, secure, and manage client connections. The server handles
+    multiple clients concurrently and processes search queries on the loaded database.
 
-    Example
+    Attributes
     ----------
-    ```
-    server = Server(config_path)
-    server.connect()
-    ```
+    config_path : str
+        The file path to the server configuration file.
+    configs : Config
+        The server configuration object.
+    server_socket : socket.socket
+        The server's main socket for handling connections.
+    is_running : bool
+        A flag indicating whether the server is currently running.
+    max_payload : int
+        The maximum size of the request payload. Defaults to 1024.
+    max_conn : int
+        The maximum number of concurrent connections. Defaults to 5.
+    max_rows : int
+        The maximum number of lines to read from the linux-path file. Defaults to 250,000.
+    database : str
+        The content of the linux-path file used as the server's database.
 
     Methods
     -------
-    __init__(config_path: str)
-        Initializes the server with configs and creates a socket.
+    __init__(config_path: str, port: Optional[int] = None, max_conn: int = 5)
+        Initializes the server with configuration settings and creates a socket.
 
     load_ssl()
-        Secures server socket with TLS.Will generate self-signed SSL certs if configs certfile or keyfile do not exist.
+        Secures the server socket with TLS. Generates self-signed SSL certificates if the
+        certfile or keyfile specified in the configuration does not exist.
 
     load_database()
-        Loads the linux-path file as the server database
+        Loads the linux-path file content as the server's database.
 
     connect()
-        Starts the server, binds the socket, and begins listening for connections.
+        Starts the server, binds the socket, and begins listening for incoming connections.
 
     receive()
-        Handles incoming connections and starts a new thread for each client.
+        Handles incoming client connections and spawns a new thread for each client.
 
-    _handle_client(client_socket: socket.socket)
+    _handle_client(client_socket: socket.socket, start_time: float, client_address: str)
         Handles communication with a connected client.
 
     stop()
         Stops the server and closes the socket.
 
-    search(query: str)
-        searches for query in the server database with selected search algorithm.
+    search(query: str) -> str
+        Searches for a query in the server's database using the configured search algorithm.
     """  # noqa: E501
 
     config_path: str
     configs: Config
     server_socket: socket.socket
     is_running: bool = False
-    max_payload: int = 1024  # the max request payload size. Defaults to 1024
-    max_conn: int = 5  # the maximum number of concurrent connections.
-    max_rows: int = (
-        250000  # the maximum number of lines to be read from linux-path file
-    )
-    database: str = (
-        ""  # the contents of linux-path used as the server database
-    )
+    # the max request payload size. Defaults to 1024
+    max_payload: int = 1024
+    # the maximum number of concurrent connections.
+    max_conn: int = 5
+    # the maximum number of lines to be read from linux-path file
+    max_rows: int = 250000
+    # the contents of linux-path used as the server database
+    database: str = ""
 
     def __init__(
         self, config_path: str, port: Optional[int] = None, max_conn: int = 5
     ):
-        """Initializes the server with configs and creates a socket"""
+        """
+        Initializes the Server with configuration settings and creates a socket.
+
+        Parameters
+        ----------
+        config_path : str
+            The file path to the configuration file.
+        port : Optional[int], optional
+            The port number to override the one in the configuration file, by default None.
+        max_conn : int, optional
+            The maximum number of concurrent connections, by default 5.
+        """  # noqa: E501
+
         self.config_path = config_path
         self.configs = read_config(config_path)
 
+        # Configure the log level
+        level = logging.getLevelName(self.configs.log_level)
+        logger.setLevel(level)
+
+        # Override port in config file if provided
         if port:
-            ## overide port in config file
             self.configs.port = port
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,8 +144,12 @@ class Server:
         self.max_conn = max_conn
 
     def load_ssl(self):
-        """Secures server socket with TLS.
-        Will generate self-signed SSL certs if configs certfile or keyfile do not exist."""  # noqa: E501
+        """
+        Secures the server socket with TLS.
+
+        If the configuration's certfile or keyfile does not exist, this method will generate
+        self-signed SSL certificates.
+        """  # noqa: E501
         # if not self.configs.certfile and not self.configs.keyfile:
         #    raise ValueError("certfile not provided in configs")
         if not os.path.exists(self.configs.certfile) and not os.path.exists(  # type: ignore
@@ -118,11 +169,15 @@ class Server:
             print("load_ssl.error", e)
 
     def load_database(self):
-        """Loads the linux-path file as the server database"""
+        """
+        Loads the content of the linux-path file specified in the configuration as the server's database.
+        """  # noqa: E501
         self.database = read_file(self.configs.linuxpath)
 
     def connect(self):
-        """Starts the server, binds the socket, and begins listening for connections."""  # noqa: E501
+        """
+        Starts the server, binds the socket to the host and port, and begins listening for connections.
+        """  # noqa: E501
         host, port = self.configs.host, self.configs.port
         try:
             self.server_socket.bind((host, port))
@@ -140,25 +195,26 @@ class Server:
             sys.exit(0)
 
     def receive(self):
-        """Handles incoming connections and starts a new thread for each client.
-        Should be called after socket is bound and listening"""  # noqa: E501
+        """
+        Handles incoming connections and starts a new thread for each client.
+
+        This method should be called after the socket is bound and listening for connections.
+        """  # noqa: E501
         ## notes:  https://docs.python.org/3/howto/sockets.html
-        # print(self.is_running)
-        # return None
+
         while self.is_running:
             try:
                 client_socket, client_address = self.server_socket.accept()
-                # print('receive loop')
 
-                ## read the configs again to check if reread_on_query has changed  # noqa: E501
+                # Re-read configs to check if reread_on_query has changed
                 self.configs = read_config(self.config_path)
                 logger.debug(
-                    f"DEBUG: [REREAD_ON_QUERY] = {self.configs.reread_on_query}"  # noqa: E501
+                    f"[REREAD_ON_QUERY] = {self.configs.reread_on_query}"
                 )
 
                 start_time: float = time.perf_counter()
 
-                ## if reread_on_query if true , re-load the database
+                # Re-load the database if reread_on_query is enabled
                 if self.configs.reread_on_query:
                     self.load_database()
 
@@ -178,13 +234,21 @@ class Server:
         start_time: float,
         client_address: str,
     ):
-        """Handles communication with a connected client.
-
-        Args:
-            - client_socket (socket.socket): The server socket connection
         """
+        Handles communication with a connected client.
+
+        Parameters
+        ----------
+        client_socket : socket.socket
+            The socket object representing the client connection.
+        start_time : float
+            The time when the connection was established.
+        client_address : str
+            The address of the connected client.
+        """
+
         try:
-            ## receive connection payload, strip null characters ie '\x00' and decode to utf-8  # noqa: E501
+            # Receive request payload, strip null characters, and decode to UTF-8  # noqa: E501
             request_data = (
                 client_socket.recv(self.max_payload)
                 .rstrip(b"\x00")
@@ -195,16 +259,15 @@ class Server:
             client_socket.sendall(response.encode("utf-8"))
 
             logger.debug(
-                f"DEBUG: Query: {request_data}, IP: {client_address}, + Execution Time: {duration * 1000}"  # noqa: E501
+                f"Query: {request_data}, IP: {client_address}, Execution Time: {duration * 1000} ms"  # noqa: E501
             )
         except Exception as e:
             logger.error(f"Error handling client: {e}")
-        finally:
-            pass
-            # client_socket.close()
 
     def stop(self):
-        """Stops the server and closes the socket."""
+        """
+        Stops the server and closes the socket.
+        """
         self.is_running = False
         try:
             # self.server_socket.close()
@@ -213,18 +276,24 @@ class Server:
         except OSError:
             pass
         except Exception as e:
-            logger.debug(f"Error stopping server: {e}")
+            logger.error(f"Error stopping server: {e}")
         self.server_socket.close()
 
     def search(self, query: str) -> str:
-        """searches for query in the server database with selected search algorithm
+        """
+        Searches for the specified query in the server's database using the configured search algorithm.
 
-        Args:
-            - query (str): The search query.
+        Parameters
+        ----------
+        query : str
+            The search query.
 
-        Returns:
-            (str): The response, either; "STRING EXISTS" or "STRING NOT FOUND"
+        Returns
+        -------
+        str
+            The search result, either "STRING EXISTS" or "STRING NOT FOUND".
         """  # noqa: E501
+
         found = regex_search(self.database, query)
         if found:
             return "STRING EXISTS"

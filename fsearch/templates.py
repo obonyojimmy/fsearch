@@ -1,5 +1,11 @@
-"""This file provides the report html template used for search algorithms benchmarks in fsearch package."""  # noqa: E501
-# fsearch/report.py
+"""
+fsearch/templates.py
+
+This module provides template literals for:
+
+- bechmark reports
+- linux service defination
+"""
 
 # benchmark a pdf template
 benchmark_template = """
@@ -58,7 +64,7 @@ benchmark_template = """
     </div>
 </body>
 </html>
-"""
+"""  # noqa: E501
 
 ## Linux service defination template
 service_template = """[Unit]

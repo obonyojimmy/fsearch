@@ -1,5 +1,21 @@
-"""This module provides the utility functions for fsearch package."""
-# fsearch/utils.py
+"""
+fsearch/utils.py
+
+This module provides utility functions for the fsearch package, such as configuration handling, file operations,
+random data generation, benchmarking, and certificate generation.
+
+Functions:
+    - read_config: Reads server configurations from a file into a `Config` object.
+    - read_file: Reads a specified number of lines from a file.
+    - compute_lps: Computes the Longest Prefix Suffix (LPS) array for the KMP search algorithm.
+    - generate_certs: Generates or retrieves self-signed SSL certificates.
+    - generate_random_string: Generates a random string of specified length.
+    - create_sample: Creates a sample text file of a specified size in megabytes.
+    - generate_samples: Samples random lines from a file.
+    - plot_benchmarks: Plots benchmark results for different search algorithms.
+    - print_benchmarks: Pretty prints benchmark results as a formatted table.
+    - benchmark_algorithms: Benchmarks various search algorithms and generates a report.
+"""  # noqa: E501
 
 import base64
 import configparser
@@ -14,26 +30,20 @@ from typing import Dict, List, Tuple
 
 from fsearch.config import Config
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s : [%(levelname)s] - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-
 logger = logging.getLogger(__name__)
 
 
 def read_config(config_path: str) -> Config:
-    """Reads server configurations from file to a `Config` object
+    """Reads server configurations from a file into a `Config` object.
 
     Args:
-      - filepath (str): The path to the file to read.
+        config_path (str): The path to the configuration file.
 
     Returns:
-      Config: The server configuration object.
+        Config: The server configuration object.
 
     Raises:
-      FileNotFoundError: If the provided filepath does not exists.
+        FileNotFoundError: If the provided filepath does not exist.
     """
     if not os.path.isfile(config_path):
         raise FileNotFoundError(f"The file '{config_path}' does not exist.")
@@ -62,47 +72,45 @@ def read_config(config_path: str) -> Config:
 
 def read_file(filepath: str, max_lines: int = 250000) -> str:
     """
-    Reads the first (max_line) lines from a file and returns them as a single string.
+    Reads the first `max_lines` lines from a file and returns them as a single string.
 
     Args:
-      - filepath (str): The path to the file to read.
-      - max_lines (int): The max number of lines to read from the file.Default to 250000
+        filepath (str): The path to the file to read.
+        max_lines (int): The maximum number of lines to read from the file. Defaults to 250,000.
 
     Returns:
-      str: A str of the contents from the file, or None.
+        str: A string of the file contents.
 
     Raises:
-      FileNotFoundError: If the provided filepath does not exists.
+        FileNotFoundError: If the provided filepath does not exist.
     """  # noqa: E501
     if not os.path.isfile(filepath):
         raise FileNotFoundError(f"The file '{filepath}' does not exist.")
 
     lines = []
-
     try:
         with open(filepath, "r") as file:
-            for i in range(max_lines):
-                line = file.readline()
-                if line:
-                    lines.append(line)
-    except Exception as e:
+            for i, line in enumerate(file):
+                if i >= max_lines:
+                    break
+                lines.append(line)
+    except Exception:
         return ""
 
-    return "\n".join(lines)
+    return "".join(lines)
 
 
 def compute_lps(pattern: str) -> List[int]:
     """
-    Compute the longest prefix suffix (LPS) array for the pattern.
+    Compute the longest prefix suffix (LPS) array for the KMP algorithm.
 
-    The LPS array is used to skip characters while matching.
-
-    Parameters:
-      pattern (list): List of words representing the pattern.
+    Args:
+        pattern (str): The pattern string for which to compute the LPS array.
 
     Returns:
-      list: LPS array for the pattern.
-    """
+        list[int]: The LPS array where each index `i` contains the length of the longest
+        prefix which is also a suffix for the substring pattern[0:i+1].
+    """  # noqa: E501
     m = len(pattern)
     lps = [0] * m
     length = 0
@@ -124,13 +132,13 @@ def compute_lps(pattern: str) -> List[int]:
 
 
 def generate_certs(cert_dir: str = "./.certs") -> Tuple[str, str]:
-    """Generates self-signed certificates if missing using openssl or return existing certs in the certs directory.
+    """Generates self-signed certificates if missing or returns existing certificates in the certs directory.
 
     Args:
-        cert_dir (str): Directory path to store the generated certs. Defaults to a ./.certs dir releative to cwd.
+        cert_dir (str): Directory path to store the generated certificates. Defaults to `./.certs`.
 
     Returns:
-        tuple[str, str]: Absolute paths to generated certfile and keyfile.
+        Tuple[str, str]: Absolute paths to the generated certificate file and key file.
     """  # noqa: E501
     certfile = os.path.join(cert_dir, "server.crt")
     keyfile = os.path.join(cert_dir, "server.key")
@@ -165,12 +173,13 @@ def generate_certs(cert_dir: str = "./.certs") -> Tuple[str, str]:
 
 
 def generate_random_string(chars: int) -> str:
-    """genrate a random string of chars length
+    """Generates a random string of the specified length.
 
     Args:
-        chars  (int) length of the string
+        chars (int): The length of the string to generate.
+
     Returns:
-        str: The random string
+        str: The generated random string.
     """
     return "".join(
         random.choices(string.ascii_letters + string.digits, k=chars)
@@ -191,9 +200,9 @@ def create_sample(size_mb: float, out_dir: str = "samples") -> str:
     # Calculate the target size in bytes
     target_size_bytes = size_mb * 1024 * 1024
     line_length = 10
-    line_with_newline_length = (
-        line_length + 1
-    )  # Each line is 10 chars + 1 newline character
+
+    # Each line is 10 characters + 1 newline character
+    line_with_newline_length = line_length + 1
     num_lines = target_size_bytes // line_with_newline_length
 
     # Calculate the number of lines in thousands, rounded down to the nearest thousand  # noqa: E501
@@ -201,6 +210,8 @@ def create_sample(size_mb: float, out_dir: str = "samples") -> str:
 
     file_name = f"{k_lines}k.txt"
     file_path = os.path.join(out_dir, file_name)
+
+    os.makedirs(out_dir, exist_ok=True)
 
     with open(file_path, "w") as new_file:
         bytes_written = 0
@@ -214,14 +225,14 @@ def create_sample(size_mb: float, out_dir: str = "samples") -> str:
 
 def generate_samples(file_path: str, size: int = 10) -> List[str]:
     """
-    Sample random lines from a file.
+    Samples random lines from a file.
 
     Args:
-        - file_path (str): Path to the file.
-        - size (int): Number of lines to sample. Defaults to 10.
+        file_path (str): Path to the file.
+        size (int): Number of lines to sample. Defaults to 10.
 
     Returns:
-    list: A list of sampled lines.
+        List[str]: A list of sampled lines.
     """
     lines = read_file(file_path).splitlines()
     total = len(lines)
@@ -231,18 +242,15 @@ def generate_samples(file_path: str, size: int = 10) -> List[str]:
 
     return random.sample(lines, k=size)
     # sampled_lines = [n for n in random.sample(lines, k=size) if n]
-    # if len(sampled_lines) == 0:
-    #    sampled_lines = generate_samples(file_path, size)
-    # return sampled_lines
 
 
 def plot_benchmarks(results: Dict[str, Dict[str, float]]) -> BytesIO:
     """
-    Plots a grouped bar chart for the benchmark results and returns the BytesIO object.
+    Plots a grouped bar chart for the benchmark results and returns a BytesIO object containing the plot image.
 
     Args:
-        results (dict): A dictionary containing the algorithm names as keys and another dictionary as values,
-                        where the keys are file line numbers and the values are execution times.
+        results (Dict[str, Dict[str, float]]): A dictionary containing the algorithm names as keys and another dictionary as values,
+                                               where the keys are file line numbers and the values are execution times.
 
     Returns:
         BytesIO: The BytesIO object containing the plot image.
@@ -287,12 +295,12 @@ def print_benchmarks(results: Dict[str, Dict[str, float]]) -> str:
     Pretty prints the benchmark results as a table.
 
     Args:
-        results (dict[str, dict[str, float]]): A dictionary with algorithm \
-            names as keys and dictionaries of file sizes and times as values.
+        results (Dict[str, Dict[str, float]]): A dictionary containing algorithm names as
+            keys and dictionaries of file sizes and times as values.
 
     Returns:
-    str: The table string representation of the results.
-    """
+        str: The string representation of the table of results.
+    """  # noqa: E501
     file_sizes = list(next(iter(results.values())).keys())
     headers = ["Algorithm"] + file_sizes + ["Average"]
     row_format = "{:<20}" + "{:<15}" * (len(headers) - 1)
@@ -408,7 +416,10 @@ def benchmark_algorithms(
     report_template = benchmark_template.format(
         table_str=table_str, plot_img=img_str
     )
+
     logger.setLevel(logging.ERROR)
+
+    ## reset fonttools and weasyprint verbose logs
     logging.getLogger("fontTools").setLevel(logging.ERROR)
     logging.getLogger("weasyprint").setLevel(logging.ERROR)
     weasyprint.HTML(string=report_template).write_pdf(report_path)
