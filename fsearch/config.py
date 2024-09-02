@@ -63,10 +63,10 @@ class Config:
             key = f.name.lower()
             if key in kwargs:
                 val: str = kwargs.pop(key)
-                if f.type == "bool" and not isinstance(val, bool):  # type: ignore
+                if f.type.__name__ == "bool" and not isinstance(val, bool):  # type: ignore
                     val = val.lower() in ("yes", "true", "on" "1")  # type: ignore
 
-                if f.type == "int" and not isinstance(val, int):  # type: ignore
+                if f.type.__name__ == "int" and not isinstance(val, int):  # type: ignore
                     val = int(val)  # type: ignore
 
                 setattr(self, key, val)
