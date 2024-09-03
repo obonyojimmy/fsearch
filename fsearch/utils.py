@@ -90,10 +90,7 @@ def read_file(filepath: str, max_lines: int = 250000) -> str:
     lines = []
     try:
         with open(filepath, "r") as file:
-            for i, line in enumerate(file):
-                if i >= max_lines:
-                    break
-                lines.append(line)
+            lines = file.readlines(max_lines)
     except Exception:
         return ""
 

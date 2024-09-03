@@ -23,6 +23,7 @@ import sys
 import threading
 import time
 from dataclasses import asdict
+from pickle import NONE
 from typing import Optional
 
 from fsearch.algorithms import regex_search
@@ -99,7 +100,11 @@ class Server:
     database: str = ""
 
     def __init__(
-        self, config_path: str, port: Optional[int] = None, max_conn: int = 5
+        self,
+        config_path: str,
+        port: Optional[int] = None,
+        max_conn: int = 5,
+        log_level: Optional[str] = None,
     ):
         """
         Initializes the Server with configuration settings and creates a socket.
@@ -112,18 +117,24 @@ class Server:
             The port number to override the one in the configuration file, by default None.
         max_conn : int, optional
             The maximum number of concurrent connections, by default 5.
+        log_level : str, optional
+            Overide log level in config file, by default None.
         """  # noqa: E501
 
         self.config_path = config_path
         self.configs = read_config(config_path)
 
-        # Configure the log level
-        level = logging.getLevelName(self.configs.log_level)
-        logger.setLevel(level)
-
         # Override port in config file if provided
         if port:
             self.configs.port = port
+
+        # Override log_level in config file if provided
+        if log_level:
+            self.configs.log_level = log_level
+
+        # Configure the log level
+        level = logging.getLevelName(self.configs.log_level)
+        logger.setLevel(level)
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ## Reconnect socket to an exisitng address
@@ -257,9 +268,9 @@ class Server:
             response = self.search(request_data)
             duration: float = time.perf_counter() - start_time
             client_socket.sendall(response.encode("utf-8"))
-
+            duration_ms = round(duration * 1000, 2)
             logger.debug(
-                f"Query: {request_data}, IP: {client_address}, Execution Time: {duration * 1000} ms"  # noqa: E501
+                f"Query: {request_data}, IP: {client_address}, Execution Time: {duration_ms} ms"  # noqa: E501
             )
         except Exception as e:
             logger.error(f"Error handling client: {e}")

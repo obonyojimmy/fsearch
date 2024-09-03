@@ -57,9 +57,11 @@ class TestReadFile(unittest.TestCase):
     @patch("os.path.isfile", return_value=True)
     def test_read_file_success(self, mock_isfile, mock_open):
         filepath = "test.txt"
-        content = read_file(filepath)
+        max_lines = 1
+        content = read_file(filepath, max_lines=max_lines)
         self.assertEqual(content, "file content")
         mock_open.assert_called_once_with(filepath, "r")
+        mock_open.return_value.readlines.assert_called_once_with(max_lines)
 
     @patch("os.path.isfile", return_value=False)
     def test_read_file_not_found(self, mock_isfile):

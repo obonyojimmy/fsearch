@@ -154,11 +154,12 @@ class TestServer(unittest.TestCase):
         sentinel.reset_mock(side_effect=True, return_value=True)
         MockServer.stop()
 
+    @patch("builtins.round")
     @patch("fsearch.server.read_config")
     @patch("fsearch.server.socket.socket")
     @patch("fsearch.server.regex_search")
     def test_handle_client(
-        self, mock_regex_search, mock_socket, mock_read_config
+        self, mock_regex_search, mock_socket, mock_read_config, mock_round
     ):
         mock_read_config.return_value = self.mock_config
         mock_client_socket = MagicMock()
@@ -172,6 +173,7 @@ class TestServer(unittest.TestCase):
             server._handle_client(mock_client_socket, 0, "client_address")
             mock_client_socket.recv.assert_called_once()
             mock_time.assert_called_once()
+            mock_round.assert_called_once()
             mock_client_socket.sendall.assert_called_once_with(
                 b"STRING EXISTS"
             )

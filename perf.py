@@ -49,7 +49,7 @@ def write_config(config_path: str, configs: Dict[str, str]):
     """
     Writes the provided configuration dictionary to a file.
 
-    Parameters:
+    Args:
         config_path : str
             The file path where the configuration should be written.
 
@@ -161,6 +161,8 @@ def performance(read_on_query: bool = False):
             target=start_server, args=(server, stop_event)
         )
         server_thread.start()
+        ## give timeout for server to start
+        time.sleep(5)
 
         # run a timed client query in a separate thread
         # client = Client(host, port)
@@ -203,18 +205,18 @@ def performance(read_on_query: bool = False):
 
         os.remove(linuxpath)
         os.remove(config_path)
-        # break
+        break
     print(benchmarks)
     report_table = format_dict_to_table(benchmarks)
-    # print(f"\n\nREREAD_ON_QUERY: ({read_on_query})\n", report_table)
+    print(f"\n\nREREAD_ON_QUERY: ({read_on_query})\n", report_table)
     return report_table
 
 
 def main():
     report_1 = performance(False)
-    report_2 = performance(True)
-    print(f"\n\nREREAD_ON_QUERY: ({False})\n", report_2)
-    print(f"\n\nREREAD_ON_QUERY: ({True})\n", report_2)
+    """ report_2 = performance(True)
+    print(f"\n\nREREAD_ON_QUERY: ({False})\n", report_1)
+    print(f"\n\nREREAD_ON_QUERY: ({True})\n", report_2) """
 
 
 if __name__ == "__main__":
