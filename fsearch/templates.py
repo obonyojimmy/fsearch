@@ -30,6 +30,12 @@ benchmark_template = """
         .table {{
             margin: 10px;
         }}
+        .speed_table {{
+            margin-top: 20px;
+            margin-bottom: 20px;
+            margin-left: 5px;
+            margin-right: 5px;
+        }}
         .summary {{
             margin-bottom: 50px;
             margin-top: 10px;
@@ -48,10 +54,17 @@ benchmark_template = """
         </p>
     </div>
     <div class="table">
+        <h4>Algorithms benchmark</h4>
         <pre>{table_str}</pre>
     </div>
     <div class="plot">
         <img src="data:image/png;base64,{plot_img}" alt="Benchmark Plot">
+    </div>
+    <div class="speed_table">
+        <h4>Speed Test Benchmark</h4>
+        <pre>{speed_report}</pre>
+        <h5>Legend</h5>
+        <p>The first collumn of each file is measure of time of when RE_READ_ON_QUERY == False, the second collumn is time measure when RE_READ_ON_QUERY == True</p>
     </div>
     <div>
         <h3>Conclusion:</h3>

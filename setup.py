@@ -32,8 +32,6 @@ setup(
         "console_scripts": [
             "fsearch=fsearch.__main__:main",
             "fsearch.service=fsearch.service:main",
-            "fsearch.client=fsearch.client:main",
-            "fsearch.benchmark=fsearch.benchmark:main",
         ]
     },
 )

@@ -64,27 +64,6 @@ class StopArgs(argparse.Namespace):
     subcommand: str
 
 
-class BenchmarkArgs(argparse.Namespace):
-    """Namespace class to hold the arguments for the 'benchmark' subcommand.
-
-    Attributes
-    ----------
-    report_path : str
-        The path to save the benchmark report.
-    sample : Optional[str]
-        The sample to benchmark.
-    sample_dir : Optional[str]
-        The directory that contains the sample files to benchmark.
-    size : int
-        The size of the number of patterns to sample with (default: 1).
-    """
-
-    report_path: str
-    sample: Optional[str]
-    sample_dir: Optional[str]
-    size: int
-
-
 class SamplesArgs(argparse.Namespace):
     """Namespace class to hold the arguments for the 'samples' subcommand.
 
@@ -124,34 +103,6 @@ def main():
         type=str,
         required=True,
         help="Path to the configuration file",
-    )
-
-    # Subcommand: benchmark
-    parser_benchmark = subparsers.add_parser(
-        "benchmark", help="Run benchmarks"
-    )
-    parser_benchmark.add_argument(
-        "-r",
-        "--report_path",
-        type=str,
-        required=True,
-        help="Path to save the benchmark report",
-    )
-    parser_benchmark.add_argument(
-        "-s", "--sample", type=str, help="Sample to benchmark"
-    )
-    parser_benchmark.add_argument(
-        "-d",
-        "--sample_dir",
-        type=str,
-        help="A directory that contains the sample files to benchmark",
-    )
-    parser_benchmark.add_argument(
-        "-n",
-        "--size",
-        type=int,
-        default=1,
-        help="Size of the number of patterns to sample with (default: 1)",
     )
 
     # Subcommand: stop
@@ -202,28 +153,6 @@ def main():
         logger.debug(f"Starting server with configuration file: {config_path}")
         server = Server(config_path)
         server.connect()
-    elif args.subcommand == "benchmark":
-        benchmark_args: BenchmarkArgs = args  # type: ignore
-        report_path = benchmark_args.report_path
-        if not benchmark_args.sample and not benchmark_args.sample_dir:
-            logger.debug(
-                "Provide a sample path or directory with -s or -d args"
-            )
-        samples = []
-        if benchmark_args.sample:
-            samples = [benchmark_args.sample]
-        if benchmark_args.sample_dir:
-            samples = [
-                os.path.join(benchmark_args.sample_dir, f)
-                for f in os.listdir(benchmark_args.sample_dir)
-                if os.path.isfile(os.path.join(benchmark_args.sample_dir, f))
-            ]
-
-        size = benchmark_args.size
-        logger.debug(
-            f"Running benchmarks with samples: {samples}, report path: {report_path}"  # noqa: E501
-        )
-        benchmark_algorithms(samples, report_path, size)
     elif args.subcommand == "stop":
         stop_args: StopArgs = args  # type: ignore
         logger.debug("Stopping the server")

@@ -128,48 +128,65 @@ Example: `pytest --fsearch-config config.ini --cov=fsearch -v`
 
 `fsearch` has five implemented search algorithms that have been extensively benchmarked. The best-performing algorithm, **regex**, is used in the server search. Please see the [benchmark report](reports/benchmark.pdf).
 
-Benchmarks:
+Algorithms Benchmarks:
 
-```
-Algorithm           271100         813300         Average        
+```plaintext
+Algorithm           95326          190651         Average        
 -----------------------------------------------------------------
-Regex Search        0.003694       0.001705       0.002699       
-Native Search       0.019504       0.065433       0.042469       
-Rabin-Karp Search   0.038471       0.062112       0.050291       
-KMP Search          0.064064       0.068926       0.066495       
-Aho-Corasick Search 0.057100       0.076279       0.066689       
+Regex Search        1.148966       0.988754       1.068860 (ms)  
+Native Search       1.267466       1.029631       1.148548 (ms)  
+Rabin-Karp Search   20.985291      17.455178      19.220235 (ms) 
+Aho-Corasick Search 33.802388      31.473223      32.637805 (ms) 
+KMP Search          48.840177      46.024340      47.432259 (ms) 
 -----------------------------------------------------------------
 ```
 
+Performance Benchmarks:
+
+```plaintext
+Requests | 1000-kb    | 2000-kb   
+-------- | ---------- | ----------
+10       | 6.7 | 12.2 | 6.1 | 15.6
+20       | 6.3 | 14.4 | 6.5 | 13.4
+30       | 6.9 | 14.4 | 6.1 | 12.9
+40       | 2.1 | 11.1 | 6.9 | 12.5
+50       | 5.5 | 11.3 | 7.5 | 12.6
+60       | 8.9 | 14.9 | 6.0 | 6.8 
+70       | 6.9 | 12.0 | 5.1 | 13.8
+80       | 7.5 | 13.4 | 7.8 | 9.5 
+90       | 6.9 | 8.8  | 6.5 | 13.0
+```
+
+*Legend*
+
+- The first collumn of each file is measure of time of when RE_READ_ON_QUERY == False, the second collumn is time measure when RE_READ_ON_QUERY == True
 To run the search algorithms benchmarks:
 
 1. Please ensure that required benchmark utility libraries  **_(matplotlib weasyprint)_** are installed , if not please install them by running:
 `pip install matplotlib weasyprint`
 
-2. Run benchmark command:
+2. Run benchmark.py  to run both performance and algorithms comparisons benchmarks:
 
 ```bash
-usage: fsearch benchmark [-h] -r REPORT_PATH [-s SAMPLE] [-d SAMPLE_DIR] [-n SIZE]
+usage: benchmark.py [-h] -r REPORT_PATH [-s MIN_SIZE] [-i ITERATIONS]
+
+Measures server performance and algorithm comparison benchmarks
 
 optional arguments:
-  -h, --help            Show this help message and exit
-  -r REPORT_PATH, --report_path REPORT_PATH  Path to save the benchmark report
-  -s SAMPLE, --sample SAMPLE                Sample to benchmark
-  -d SAMPLE_DIR, --sample_dir SAMPLE_DIR    Directory containing the sample files to benchmark
-  -n SIZE, --size SIZE                      Number of patterns to sample with (default: 1)
+  -h, --help            show this help message and exit
+  -r REPORT_PATH, --report_path REPORT_PATH
+                        Path to save the benchmark report
+  -s MIN_SIZE, --min_size MIN_SIZE
+                        The minimum sample size in kb. Defaults to 10000 ie 10mb (default: 1).
+  -i ITERATIONS, --iterations ITERATIONS
+                        The number of iterations to run the performance benchmark loop. Defaults to 2 loops.
 ```
 
 Example: `fsearch benchmark -r reports/benchmark.pdf -d samples/ -n 1` will run benchmarks using files in the `samples/` directory as the sampling samples, and create a pdf report at path `reports/benchmark.pdf`
 
-To run performance speed test benchmark , please run the `perf.py` file, example :
-
-```bash
-python perf.py
-```
-This will create test sample databse path and print a bechmark report table in the terminal on completion, please note this may take some minutes to complete.
-
 ## Limitations
 
+- The 1st client request will take ~0.40ms longer , proceeding request will be much faster ~0.5ms if REREAD_ON_QUERY false and ~10ms if REREAD_ON_QUERY is True.
 - It reads a maximum of 250,000 lines of the database file (`linuxpath`).
 - Client connections are handled in multithreaded mode but in the same process as the server, which might overload a single processor. Optimization can be achieved by handling client connections in multiple processes.
 - The maximum number of concurrent connections is set to 5. It is suggested to make this configurable.

@@ -169,7 +169,7 @@ class Server:
             self.configs.certfile, self.configs.keyfile = generate_certs()
 
         try:
-            self.server_socket = ssl.wrap_socket(
+            self.server_socket = ssl.wrap_socket(  # type: ignore (pylance warning)
                 self.server_socket,
                 server_side=True,
                 certfile=self.configs.certfile,

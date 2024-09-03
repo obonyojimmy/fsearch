@@ -34,15 +34,10 @@ test:
 	pytest --fsearch-config config.ini --cov=fsearch -v
 	#pytest tests/test_service.py --fsearch-config config.ini --cov=fsearch.server -s
 
-perf:
-	python perf.py
-
 benchmark:
-	#fsearch benchmark -r reports/benchmark-2.pdf -s samples/400k.txt -n 1
-	fsearch benchmark -r reports/benchmark.pdf -d samples/ -n 1
+	python benchmark.py -r reports/benchmark.pdf -s 1000 -i 2
 
 client:
 	python client.py -p 8080 '11;0;23;11;0;19;5;0;'
 	#python client.py -p 8080 -c .certs/server.crt -k .certs/server.key '11;0;23;11;0;19;5;0;'
 	#python client.py --host 0.0.0.0 -c .certs/server.crt -k .certs/server.key -p 8080 '11;0;23;11;0;19;5;0;'
-	#client.py -h 0.0.0.0 -p 8080 '11;0;23;11;0;19;5'

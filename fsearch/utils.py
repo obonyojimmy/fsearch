@@ -26,7 +26,7 @@ import string
 import subprocess
 import timeit
 from io import BytesIO
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from fsearch.config import Config
 
@@ -320,7 +320,10 @@ def print_benchmarks(results: Dict[str, Dict[str, float]]) -> str:
 
 
 def benchmark_algorithms(
-    file_paths: List[str], report_path: str, sample_size: int = 1
+    file_paths: List[str],
+    report_path: str,
+    sample_size: int = 1,
+    speed_report: Optional[str] = None,
 ):
     """
     Benchmarks the different search algorithms using the content of the specified files and patterns
@@ -329,7 +332,8 @@ def benchmark_algorithms(
     Args:
         file_paths (list): A list of paths to the search files.
         report_path (str): The path the benchmark PDF report will be saved to.
-        sample_size (int): Number of lines to sample for generating patterns.
+        sample_size (int, optional): Number of lines to sample for generating patterns.
+        speed_report (str, optional): Optional speed-test report generated from `perf.py` to add to the benchmark pdf report
 
     Returns:
         None
@@ -411,7 +415,7 @@ def benchmark_algorithms(
     img_str = base64.b64encode(plot_img.read()).decode("utf-8")
 
     report_template = benchmark_template.format(
-        table_str=table_str, plot_img=img_str
+        table_str=table_str, plot_img=img_str, speed_report=speed_report
     )
 
     logger.setLevel(logging.ERROR)
