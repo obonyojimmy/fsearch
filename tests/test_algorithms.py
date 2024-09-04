@@ -3,6 +3,7 @@ import unittest
 from fsearch.algorithms import (
     AhoCorasick,
     aho_corasick_search,
+    binary_search,
     kmp_search,
     native_search,
     rabin_karp_search,
@@ -69,6 +70,17 @@ class TestAhoCorasickSearch(unittest.TestCase):
 
     def test_partial_match(self):
         self.assertFalse(aho_corasick_search(text, partial_match))
+
+
+class TestBinarySearch(unittest.TestCase):
+    def test_search_match(self):
+        self.assertTrue(binary_search(text, full_match))
+
+    def test_no_match(self):
+        self.assertFalse(binary_search(text, false_match))
+
+    def test_partial_match(self):
+        self.assertFalse(binary_search(text, partial_match))
 
 
 class TestAhoCorasick(unittest.TestCase):

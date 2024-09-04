@@ -9,7 +9,7 @@ setup(
     version="0.1.0",
     author="Jimmycliff Obonyo",
     author_email="cliffjimmy27@gmail.com",
-    description="A highly performant and secure command-line server to search text files for strings.",
+    description="A highly performant and secure command-line server to search text files for strings.",  # noqa: E501
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",

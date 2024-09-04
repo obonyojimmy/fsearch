@@ -41,6 +41,7 @@ Example usage:
 
 from __future__ import annotations
 
+import bisect
 import re
 from collections import deque
 
@@ -265,6 +266,29 @@ def aho_corasick_search(text: str, pattern: str) -> bool:
                 if match == pattern:
                     return True
 
+    return False
+
+
+def binary_search(text: str, pattern: str) -> bool:
+    """
+    Perform a binary search to find an exact full-line match in a multiline string.
+
+    Args:
+        text (str): The multiline string to search within.
+        pattern (str): The full-line pattern to search for.
+
+    Returns:
+        bool: True if the pattern is found as a full-line match, False otherwise.
+    """  # noqa: E501
+    # Split the text into individual lines and sort them
+    lines = sorted(text.splitlines())
+
+    # Use bisect to find the insertion point
+    index = bisect.bisect_left(lines, pattern)
+
+    # Check if the pattern matches the line at the insertion point
+    if index < len(lines) and lines[index] == pattern:
+        return True
     return False
 
 

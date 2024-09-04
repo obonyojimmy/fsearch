@@ -6,7 +6,7 @@ import queue
 import tempfile
 import threading
 import time
-from typing import Dict, Optional
+from typing import Dict
 
 from client import Client
 from fsearch.server import Server
@@ -28,7 +28,7 @@ def send_query(client: Client, query):
     """  # noqa: E501
 
     start_time = time.perf_counter()
-    response = client.send_message(query)
+    client.send_message(query)
     # print("Response:", response)
     req_time = time.perf_counter() - start_time
     return req_time

@@ -35,7 +35,10 @@ line-length = 79 # Set maximum line length (PEP 8 suggests 79 characters)
 
 [lint]
 # Enable all PEP 8 rules
-select = ["E"]
+select = [
+    "E", 
+    "F",
+]
 # Enforce blank lines before class/function definitions
 extend-select = [
     "E2",  # whitespace around operators

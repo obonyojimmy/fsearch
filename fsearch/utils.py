@@ -340,7 +340,6 @@ def benchmark_algorithms(
     """  # noqa: E501
     try:
         # ensure the required extra dependencies are installed
-        import matplotlib  # type: ignore
         import weasyprint
     except ImportError:
         logger.debug(
@@ -353,6 +352,7 @@ def benchmark_algorithms(
     # internal package imports
     from fsearch.algorithms import (
         aho_corasick_search,
+        binary_search,
         kmp_search,
         native_search,
         rabin_karp_search,
@@ -366,6 +366,7 @@ def benchmark_algorithms(
         "KMP Search": kmp_search,
         "Aho-Corasick Search": aho_corasick_search,
         "Regex Search": regex_search,
+        "Binary Search": binary_search,
     }
 
     results = {algorithm: {} for algorithm in algorithms.keys()}

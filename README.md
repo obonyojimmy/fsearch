@@ -133,11 +133,12 @@ Algorithms Benchmarks:
 ```plaintext
 Algorithm           95326          190651         Average        
 -----------------------------------------------------------------
-Regex Search        1.148966       0.988754       1.068860 (ms)  
-Native Search       1.267466       1.029631       1.148548 (ms)  
-Rabin-Karp Search   20.985291      17.455178      19.220235 (ms) 
-Aho-Corasick Search 33.802388      31.473223      32.637805 (ms) 
-KMP Search          48.840177      46.024340      47.432259 (ms) 
+Regex Search        1.181368       0.739395       0.960382 (ms)  
+Native Search       1.378341       0.912225       1.145283 (ms)  
+Binary Search       4.798547       4.752091       4.775319 (ms)  
+Rabin-Karp Search   19.857455      12.603906      16.230681 (ms) 
+Aho-Corasick Search 31.986683      20.284360      26.135522 (ms) 
+KMP Search          47.275447      30.576424      38.925935 (ms) 
 -----------------------------------------------------------------
 ```
 
@@ -182,11 +183,11 @@ optional arguments:
                         The number of iterations to run the performance benchmark loop. Defaults to 2 loops.
 ```
 
-Example: `fsearch benchmark -r reports/benchmark.pdf -d samples/ -n 1` will run benchmarks using files in the `samples/` directory as the sampling samples, and create a pdf report at path `reports/benchmark.pdf`
+Example: `fsearch benchmark -r reports/benchmark.pdf -s 1000 -n 2` will run benchmarks  and create a pdf report at path `reports/benchmark.pdf`
 
 ## Limitations
 
-- The 1st client request will take ~0.40ms longer , proceeding request will be much faster ~0.5ms if REREAD_ON_QUERY false and ~10ms if REREAD_ON_QUERY is True.
+- The 1st client request will take ~1ms longer , proceeding request will be much faster ~0.5ms if REREAD_ON_QUERY false and ~10ms if REREAD_ON_QUERY is True.
 - It reads a maximum of 250,000 lines of the database file (`linuxpath`).
 - Client connections are handled in multithreaded mode but in the same process as the server, which might overload a single processor. Optimization can be achieved by handling client connections in multiple processes.
 - The maximum number of concurrent connections is set to 5. It is suggested to make this configurable.

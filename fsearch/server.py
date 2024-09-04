@@ -23,7 +23,6 @@ import sys
 import threading
 import time
 from dataclasses import asdict
-from pickle import NONE
 from typing import Optional
 
 from fsearch.algorithms import regex_search
@@ -201,8 +200,8 @@ class Server:
             logger.debug("Exiting the server...")
             self.stop()
             sys.exit(0)
-        except OSError as e:
-            logger.debug(f"Exiting the server...")
+        except OSError:
+            logger.debug("Exiting the server...")
             sys.exit(0)
 
     def receive(self):
@@ -236,8 +235,8 @@ class Server:
                 client_handler.start()
             except ssl.SSLError as e:
                 logger.error(f"Client SSL ERROR: {e}")
-            except Exception as e:
-                logger.debug(f"SERVER CONNECTIONS CLOSED")
+            except Exception:
+                logger.debug("SERVER CONNECTIONS CLOSED")
 
     def _handle_client(
         self,

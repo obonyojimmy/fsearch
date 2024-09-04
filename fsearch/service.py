@@ -1,5 +1,5 @@
 """
-fsearch/server.py
+fsearch/service.py
 
 This module provides the functionality to create and manage a systemd service for the fsearch server.
 
